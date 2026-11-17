@@ -29,7 +29,19 @@ target/pdf-sofortdruck.jar
 
 1. `target/pdf-sofortdruck.jar` und `config.json` in einen gemeinsamen Ordner kopieren.
 2. `config.json` anpassen (siehe unten).
-3. Starten mit `java -jar pdf-sofortdruck.jar` (oder per Doppelklick, falls `.jar` mit Java verknüpft ist).
+3. Starten mit `javaw -jar pdf-sofortdruck.jar` (oder per Doppelklick, falls `.jar` mit Java verknüpft ist).
+
+**Wichtig bei einem Start per Batch-Datei:** Bitte `javaw.exe` statt `java.exe` verwenden.
+`java.exe` öffnet ein Konsolenfenster; nach dem Schließen des Druckdialogs kann dieses
+den Fokus erhalten, sodass `Strg+W` an die Konsole geht statt an den Browser. `javaw.exe`
+startet ohne Konsole und verhält sich wie der Start aus der IDE.
+
+**Wichtig zum Arbeitsverzeichnis:** Ohne explizites Argument sucht das Programm die
+`config.json` zuerst im aktuellen Arbeitsverzeichnis und erst danach neben der Jar.
+Ein Batch mit anderem `cd` kann daher eine andere Konfiguration und eine andere
+`pdf-sofortdruck.log` verwenden. Die Zeilen `Arbeitsverzeichnis:` und `Konfiguration:`
+im Log zeigen genau, welche Datei geladen wurde. Am sichersten ist die Config als
+Argument anzugeben (siehe unten).
 
 **Wichtig für eine abgespeckte JRE/jlink-Runtime:** `java.awt.Robot` (für `Strg+W`) gehört
 zum Modul `java.desktop` und benötigt dessen native `awt.dll` aus der Runtime. Eine

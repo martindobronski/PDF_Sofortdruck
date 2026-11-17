@@ -25,9 +25,12 @@ public final class Main {
             WatcherConfig config = WatcherConfig.load(configFile);
 
             WatcherFrame frame = new WatcherFrame(config, configFile);
-            PrintDialogManager dialogs = new PrintDialogManager(config, new EdgeTabCloser(frame::log));
+            PrintDialogManager dialogs = new PrintDialogManager(config, new EdgeTabCloser(frame::log), frame::log);
             DownloadWatcher watcher = new DownloadWatcher(config, dialogs::enqueue, frame::log);
             frame.setWatcher(watcher);
+            frame.log("Arbeitsverzeichnis: " + Paths.get("").toAbsolutePath());
+            frame.log("Konfiguration: " + configFile.toAbsolutePath());
+            frame.log("closeEdgeTabAfterPrint=" + config.closeEdgeTabAfterPrint());
             frame.log("Java " + System.getProperty("java.version")
                     + ", Runtime: " + System.getProperty("java.home"));
             try {

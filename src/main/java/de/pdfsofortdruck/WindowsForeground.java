@@ -8,7 +8,11 @@ import com.sun.jna.ptr.IntByReference;
 import java.awt.Window;
 import java.util.Locale;
 
-/** Erzwingt den Windows-Fokus für ein AWT-Fenster. Auf anderen Systemen ein No-op. */
+/**
+ * Windows-Fokus-Helfer: merkt sich das Vordergrundfenster vor dem Druckdialog,
+ * erzwingt den Fokus für den Dialog und stellt das Browserfenster vor dem Senden
+ * von Strg+W wieder her. Auf anderen Systemen sind alle Methoden No-ops.
+ */
 final class WindowsForeground {
 
     private interface User32 extends Library {
@@ -20,13 +24,23 @@ final class WindowsForeground {
 
         boolean SetForegroundWindow(Pointer hWnd);
 
-        boolean SetFocus(Pointer hWnd);
-
         Pointer GetForegroundWindow();
 
         int GetWindowThreadProcessId(Pointer hWnd, IntByReference processId);
 
         boolean AttachThreadInput(int idAttach, int idAttachTo, boolean fAttach);
+
+        boolean IsWindow(Pointer hWnd);
+
+        Pointer GetAncestor(Pointer hWnd, int gaFlags);
+
+        int GetWindowTextLengthW(Pointer hWnd);
+
+        int GetWindowTextW(Pointer hWnd, char[] text, int maxCount);
+
+        void keybd_event(byte virtualKey, byte scan, int flags, Pointer extraInfo);
+
+        void SwitchToThisWindow(Pointer hWnd, boolean altTab);
     }
 
     private interface Kernel32 extends Library {
@@ -36,6 +50,9 @@ final class WindowsForeground {
     }
 
     private static final int SW_SHOW = 5;
+    private static final int GA_ROOT = 2;
+    private static final byte VK_MENU = 0x12;
+    private static final int KEYEVENTF_KEYUP = 0x0002;
 
     private WindowsForeground() {
     }
@@ -45,43 +62,150 @@ final class WindowsForeground {
             return "Fokus-Erzwingung nur unter Windows – übersprungen.";
         }
         try {
-            User32.INSTANCE.GetForegroundWindow();
-            return "JNA/Windows-API verfügbar.";
+            return "JNA/Windows-API verfügbar. Vordergrund beim Start: "
+                    + describe(User32.INSTANCE.GetForegroundWindow());
         } catch (Throwable e) {
             return "JNA/Windows-API NICHT verfügbar: " + e;
         }
     }
 
-    static void force(Window window) {
+    /** Merkt sich das Fenster, das vor dem Druckdialog im Vordergrund war (z. B. Edge). */
+    static Pointer captureForeground() {
         if (!isWindows()) {
-            return;
+            return null;
+        }
+        try {
+            Pointer hWnd = User32.INSTANCE.GetForegroundWindow();
+            if (hWnd == null) {
+                return null;
+            }
+            Pointer root = User32.INSTANCE.GetAncestor(hWnd, GA_ROOT);
+            return root != null ? root : hWnd;
+        } catch (Throwable e) {
+            return null;
+        }
+    }
+
+    static String describe(Pointer hWnd) {
+        if (hWnd == null) {
+            return "kein Fenster";
+        }
+        return "'" + title(hWnd) + "' (" + handle(hWnd) + ")";
+    }
+
+    /** Bringt den Druckdialog in den Vordergrund und liefert eine Diagnosezeile. */
+    static String force(Window window) {
+        if (!isWindows()) {
+            return "Fokus-Erzwingung nur unter Windows – übersprungen.";
         }
         try {
             Pointer hWnd = Native.getComponentPointer(window);
             if (hWnd == null) {
-                return;
+                return "Druckdialog: kein Fenster-Handle.";
             }
-            User32 user = User32.INSTANCE;
-            IntByReference processId = new IntByReference();
-            int foregroundThread = user.GetWindowThreadProcessId(user.GetForegroundWindow(), processId);
-            int ownThread = Kernel32.INSTANCE.GetCurrentThreadId();
-            boolean attached = false;
-            if (foregroundThread != 0 && foregroundThread != ownThread) {
-                attached = user.AttachThreadInput(ownThread, foregroundThread, true);
-            }
+            String before = describe(User32.INSTANCE.GetForegroundWindow());
+            boolean ok = bringToFront(hWnd);
+            return "Druckdialog-Fokus: vorher " + before + ", SetForegroundWindow=" + ok
+                    + ", nachher " + describe(User32.INSTANCE.GetForegroundWindow());
+        } catch (Throwable e) {
+            return "Druckdialog-Fokus fehlgeschlagen: " + e;
+        }
+    }
+
+    /** Stellt das gemerkte Browserfenster wieder her, damit Strg+W dort ankommt. */
+    static String restore(Pointer hWnd) {
+        if (!isWindows()) {
+            return "";
+        }
+        if (hWnd == null || !User32.INSTANCE.IsWindow(hWnd)) {
+            return "Kein gültiges Browserfenster gemerkt.";
+        }
+        try {
+            String before = describe(User32.INSTANCE.GetForegroundWindow());
+            boolean ok = bringToFront(hWnd);
+            return "Browserfokus wiederhergestellt: vorher " + before + ", SetForegroundWindow=" + ok
+                    + ", nachher " + describe(User32.INSTANCE.GetForegroundWindow());
+        } catch (Throwable e) {
+            return "Browserfenster konnte nicht wiederhergestellt werden: " + e;
+        }
+    }
+
+    private static boolean bringToFront(Pointer hWnd) {
+        User32 user = User32.INSTANCE;
+
+        // Windows vergibt den Vordergrund nur an den Prozess mit der letzten Eingabe.
+        // Ein synthetischer ALT-Druck hebt diese Sperre auf.
+        try {
+            user.keybd_event(VK_MENU, (byte) 0, 0, null);
+            user.keybd_event(VK_MENU, (byte) 0, KEYEVENTF_KEYUP, null);
+        } catch (Throwable ignored) {
+            // Optional – der Rest wird trotzdem versucht.
+        }
+
+        IntByReference processId = new IntByReference();
+        int foregroundThread = 0;
+        int ownThread = 0;
+        try {
+            foregroundThread = user.GetWindowThreadProcessId(user.GetForegroundWindow(), processId);
+            ownThread = Kernel32.INSTANCE.GetCurrentThreadId();
+        } catch (Throwable ignored) {
+            // Dann ohne AttachThreadInput weitermachen.
+        }
+
+        boolean attached = false;
+        if (foregroundThread != 0 && ownThread != 0 && foregroundThread != ownThread) {
             try {
-                user.ShowWindow(hWnd, SW_SHOW);
-                user.BringWindowToTop(hWnd);
-                user.SetForegroundWindow(hWnd);
-                user.SetFocus(hWnd);
-            } finally {
-                if (attached) {
-                    user.AttachThreadInput(ownThread, foregroundThread, false);
+                attached = user.AttachThreadInput(ownThread, foregroundThread, true);
+            } catch (Throwable ignored) {
+                // Nicht kritisch.
+            }
+        }
+
+        try {
+            user.ShowWindow(hWnd, SW_SHOW);
+            user.BringWindowToTop(hWnd);
+            boolean ok = false;
+            try {
+                ok = user.SetForegroundWindow(hWnd);
+            } catch (Throwable ignored) {
+                // Fallback unten.
+            }
+            if (!ok) {
+                try {
+                    user.SwitchToThisWindow(hWnd, true);
+                    ok = user.SetForegroundWindow(hWnd);
+                } catch (Throwable ignored) {
+                    // Letzter Versuch war erfolglos.
                 }
             }
-        } catch (Throwable ignored) {
-            // Falls die API nicht verfügbar ist, bleibt es beim normalen Swing-Fokus.
+            return ok;
+        } finally {
+            if (attached) {
+                try {
+                    user.AttachThreadInput(ownThread, foregroundThread, false);
+                } catch (Throwable ignored) {
+                    // Aufräumen darf nicht fehlschlagen.
+                }
+            }
         }
+    }
+
+    private static String title(Pointer hWnd) {
+        try {
+            int length = User32.INSTANCE.GetWindowTextLengthW(hWnd);
+            if (length <= 0) {
+                return "<unbenannt>";
+            }
+            char[] buffer = new char[Math.min(length + 1, 512)];
+            int count = User32.INSTANCE.GetWindowTextW(hWnd, buffer, buffer.length);
+            return count > 0 ? new String(buffer, 0, count) : "<unbenannt>";
+        } catch (Throwable e) {
+            return "<unbekannt>";
+        }
+    }
+
+    private static String handle(Pointer hWnd) {
+        return String.format("0x%X", Pointer.nativeValue(hWnd));
     }
 
     private static boolean isWindows() {

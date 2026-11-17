@@ -1,5 +1,7 @@
 package de.pdfsofortdruck;
 
+import com.sun.jna.Pointer;
+
 import java.awt.AWTException;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
@@ -7,9 +9,9 @@ import java.util.Locale;
 import java.util.function.Consumer;
 
 /**
- * Schließt nach dem Druck den aktiven Tab per Strg+W.
- * Es wird bewusst keine Prozess- oder URL-Prüfung gemacht – der Browser steht beim
- * Auslösen des Drucks im Vordergrund und bekommt den Fokus nach dem Dialog wieder.
+ * Schließt nach dem Druck den aktiven Tab per Strg+W. Vorher wird das Browserfenster,
+ * das beim Erkennen der PDF im Vordergrund war, wieder aktiviert – sonst geht der
+ * Tastendruck je nach Startart (Batch mit Konsole!) an das falsche Fenster.
  */
 public final class EdgeTabCloser {
 
@@ -19,14 +21,15 @@ public final class EdgeTabCloser {
         this.logger = logger;
     }
 
-    public void closeActiveTab() {
+    public void closeActiveTab(Pointer browserWindow) {
         if (!isWindows()) {
             logger.accept("Strg+W wird nur unter Windows gesendet – übersprungen.");
             return;
         }
         try {
+            String focusInfo = WindowsForeground.restore(browserWindow);
             sendCtrlW();
-            logger.accept("Strg+W nach dem Druck gesendet.");
+            logger.accept("Strg+W nach dem Druck gesendet. " + focusInfo);
         } catch (AWTException e) {
             logger.accept("Strg+W konnte nicht gesendet werden: " + e.getMessage());
         }

@@ -24,23 +24,26 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
 /** Dialog, der beim Auftauchen einer passenden PDF angezeigt wird. */
 public final class PrintDialog extends JDialog {
 
     private final Path file;
     private final WatcherConfig config;
+    private final Consumer<String> logger;
     private final JLabel statusLabel;
     private final JButton printButton = new JButton("Drucken");
     private final JButton closeButton = new JButton("Abbrechen");
     private boolean printStarted;
     private boolean printSucceeded;
 
-    public PrintDialog(Path file, WatcherConfig config) {
+    public PrintDialog(Path file, WatcherConfig config, Consumer<String> logger) {
         // Kein Owner: der Dialog bleibt sichtbar, obwohl das Statusfenster minimiert ist.
         super((Frame) null, "PDF sofort drucken", true);
         this.file = file;
         this.config = config;
+        this.logger = logger;
         closeButton.setFocusable(false); // Enter darf niemals "Abbrechen" auslösen.
 
         JLabel headline = new JLabel("Neue Druckdatei gefunden");
@@ -115,7 +118,7 @@ public final class PrintDialog extends JDialog {
         if (visible) {
             // Der Dialog hat keinen Owner; Fokus daher explizit nach dem Anzeigen setzen.
             EventQueue.invokeLater(() -> {
-                WindowsForeground.force(this);
+                logger.accept(WindowsForeground.force(this));
                 toFront();
                 requestFocus();
                 printButton.requestFocus();
