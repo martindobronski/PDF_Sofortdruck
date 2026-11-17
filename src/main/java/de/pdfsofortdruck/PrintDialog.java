@@ -139,7 +139,11 @@ public final class PrintDialog extends JDialog {
             public void windowOpened(WindowEvent event) {
                 logger.accept("Druckdialog geöffnet – Fokus wird gesetzt. " + awtFocusInfo());
                 EventQueue.invokeLater(() -> {
-                    logger.accept(WindowsForeground.force(PrintDialog.this));
+                    try {
+                        logger.accept(WindowsForeground.force(PrintDialog.this));
+                    } catch (Throwable e) {
+                        logger.accept("Druckdialog-Fokus fehlgeschlagen: " + e);
+                    }
                     applyFocus();
                 });
                 startFocusWatchdog();
@@ -177,28 +181,47 @@ public final class PrintDialog extends JDialog {
      * der Dialog noch im Vordergrund ist, und holen den Fokus bei Bedarf zurück.
      */
     private void startFocusWatchdog() {
-        if (!WindowsForeground.isWindows()) {
-            return;
+        try {
+            if (!WindowsForeground.isWindows()) {
+                return;
+            }
+        } catch (Throwable e) {
+            return; // Ohne JNA bleibt es beim normalen Swing-Fokus.
         }
         focusWatchdogEnd = System.currentTimeMillis() + FOCUS_WATCHDOG_MS;
         focusConfirmedChecks = 0;
         focusTimer = new Timer(FOCUS_CHECK_MS, event -> {
-            if (!isDisplayable() || !isVisible() || System.currentTimeMillis() >= focusWatchdogEnd) {
-                logger.accept("Fokusüberwachung beendet.");
-                stopFocusWatchdog();
-                return;
-            }
-            if (WindowsForeground.isForeground(this)) {
-                if (++focusConfirmedChecks >= FOCUS_STABLE_CHECKS) {
-                    logger.accept("Druckdialog hat stabil den Fokus – Überwachung beendet.");
+            try {
+                if (!isDisplayable() || !isVisible() || System.currentTimeMillis() >= focusWatchdogEnd) {
+                    logger.accept("Fokusüberwachung beendet.");
                     stopFocusWatchdog();
+                    return;
                 }
-                return;
+                boolean foreground;
+                try {
+                    foreground = WindowsForeground.isForeground(this);
+                } catch (Throwable e) {
+                    foreground = false;
+                }
+                if (foreground) {
+                    if (++focusConfirmedChecks >= FOCUS_STABLE_CHECKS) {
+                        logger.accept("Druckdialog hat stabil den Fokus – Überwachung beendet.");
+                        stopFocusWatchdog();
+                    }
+                    return;
+                }
+                focusConfirmedChecks = 0;
+                logger.accept("Druckdialog ohne Fokus – Fokus wird erneut gesetzt. " + awtFocusInfo());
+                try {
+                    logger.accept(WindowsForeground.force(this));
+                } catch (Throwable e) {
+                    logger.accept("Druckdialog-Fokus fehlgeschlagen: " + e);
+                }
+                applyFocus();
+            } catch (Throwable e) {
+                logger.accept("Fokusüberwachung fehlgeschlagen: " + e);
+                stopFocusWatchdog();
             }
-            focusConfirmedChecks = 0;
-            logger.accept("Druckdialog ohne Fokus – Fokus wird erneut gesetzt. " + awtFocusInfo());
-            logger.accept(WindowsForeground.force(this));
-            applyFocus();
         });
         focusTimer.setRepeats(true);
         focusTimer.start();

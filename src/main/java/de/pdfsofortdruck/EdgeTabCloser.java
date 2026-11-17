@@ -1,7 +1,5 @@
 package de.pdfsofortdruck;
 
-import com.sun.jna.Pointer;
-
 import java.awt.AWTException;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
@@ -21,13 +19,18 @@ public final class EdgeTabCloser {
         this.logger = logger;
     }
 
-    public void closeActiveTab(Pointer browserWindow) {
+    public void closeActiveTab(Object browserWindow) {
         if (!isWindows()) {
             logger.accept("Strg+W wird nur unter Windows gesendet – übersprungen.");
             return;
         }
+        String focusInfo;
         try {
-            String focusInfo = WindowsForeground.restore(browserWindow);
+            focusInfo = WindowsForeground.restore(browserWindow);
+        } catch (Throwable e) {
+            focusInfo = "Browserfokus konnte nicht gesetzt werden: " + e;
+        }
+        try {
             sendCtrlW();
             logger.accept("Strg+W nach dem Druck gesendet. " + focusInfo);
         } catch (AWTException e) {

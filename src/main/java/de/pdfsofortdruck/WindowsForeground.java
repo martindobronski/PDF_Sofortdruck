@@ -12,6 +12,10 @@ import java.util.Locale;
  * Windows-Fokus-Helfer: merkt sich das Vordergrundfenster vor dem Druckdialog,
  * erzwingt den Fokus für den Dialog und stellt das Browserfenster vor dem Senden
  * von Strg+W wieder her. Auf anderen Systemen sind alle Methoden No-ops.
+ *
+ * Die JNA-Typen bleiben bewusst innerhalb dieser Klasse. Nach außen wird ein
+ * opakes Objekt als Fenster-Handle gereicht, damit ein fehlendes JNA weder den
+ * Start noch das Senden von Strg+W verhindert.
  */
 final class WindowsForeground {
 
@@ -70,7 +74,7 @@ final class WindowsForeground {
     }
 
     /** Merkt sich das Fenster, das vor dem Druckdialog im Vordergrund war (z. B. Edge). */
-    static Pointer captureForeground() {
+    static Object captureForeground() {
         if (!isWindows()) {
             return null;
         }
@@ -86,8 +90,8 @@ final class WindowsForeground {
         }
     }
 
-    static String describe(Pointer hWnd) {
-        if (hWnd == null) {
+    static String describe(Object handle) {
+        if (!(handle instanceof Pointer hWnd)) {
             return "kein Fenster";
         }
         return "'" + title(hWnd) + "' (" + handle(hWnd) + ")";
@@ -126,14 +130,17 @@ final class WindowsForeground {
     }
 
     /** Stellt das gemerkte Browserfenster wieder her, damit Strg+W dort ankommt. */
-    static String restore(Pointer hWnd) {
+    static String restore(Object handle) {
         if (!isWindows()) {
             return "";
         }
-        if (hWnd == null || !User32.INSTANCE.IsWindow(hWnd)) {
-            return "Kein gültiges Browserfenster gemerkt.";
+        if (handle == null) {
+            return "Kein Browserfenster gemerkt.";
         }
         try {
+            if (!(handle instanceof Pointer hWnd) || !User32.INSTANCE.IsWindow(hWnd)) {
+                return "Kein gültiges Browserfenster gemerkt.";
+            }
             String before = describe(User32.INSTANCE.GetForegroundWindow());
             boolean ok = bringToFront(hWnd);
             return "Browserfokus wiederhergestellt: vorher " + before + ", SetForegroundWindow=" + ok

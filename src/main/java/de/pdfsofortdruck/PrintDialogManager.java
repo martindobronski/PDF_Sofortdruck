@@ -1,7 +1,5 @@
 package de.pdfsofortdruck;
 
-import com.sun.jna.Pointer;
-
 import javax.swing.SwingUtilities;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
@@ -13,7 +11,7 @@ public final class PrintDialogManager {
 
     private static final int FOCUS_DELAY_MS = 300;
 
-    private record Pending(Path file, Pointer browserWindow) {
+    private record Pending(Path file, Object browserWindow) {
     }
 
     private final WatcherConfig config;
@@ -31,7 +29,12 @@ public final class PrintDialogManager {
     /** Wird aus dem Wächter-Thread aufgerufen. */
     public void enqueue(Path file) {
         // Fenster merken, solange der Browser noch im Vordergrund steht.
-        Pointer browserWindow = WindowsForeground.captureForeground();
+        Object browserWindow;
+        try {
+            browserWindow = WindowsForeground.captureForeground();
+        } catch (Throwable e) {
+            browserWindow = null; // Ohne JNA einfach Strg+W an das aktive Fenster senden.
+        }
         synchronized (this) {
             queue.add(new Pending(file, browserWindow));
             if (dialogActive) {

@@ -33,13 +33,26 @@ public final class Main {
             frame.log("closeEdgeTabAfterPrint=" + config.closeEdgeTabAfterPrint());
             frame.log("Java " + System.getProperty("java.version")
                     + ", Runtime: " + System.getProperty("java.home"));
+            frame.log("Geladene Jar: " + codeSource());
+            frame.log("Classpath: " + System.getProperty("java.class.path"));
+            frame.log("Temp-Verzeichnis: " + System.getProperty("java.io.tmpdir"));
+            try {
+                Class.forName("com.sun.jna.Native", false, Main.class.getClassLoader());
+                frame.log("JNA-Klasse im Classpath vorhanden.");
+            } catch (Throwable e) {
+                frame.log("JNA-Klasse FEHLT im Classpath: " + e);
+            }
             try {
                 new Robot();
                 frame.log("Robot (Tastatureingabe) verfügbar.");
             } catch (Throwable e) {
                 frame.log("Robot (Tastatureingabe) NICHT verfügbar: " + e);
             }
-            frame.log(WindowsForeground.diagnose());
+            try {
+                frame.log(WindowsForeground.diagnose());
+            } catch (Throwable e) {
+                frame.log("JNA/Windows-API NICHT verfügbar: " + e);
+            }
             frame.setVisible(true);
             frame.setState(java.awt.Frame.ICONIFIED); // Statusfenster sofort minimieren
             PrintDialog.warmUp(); // ersten modalen Dialog einmalig initialisieren
