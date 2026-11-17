@@ -3,35 +3,15 @@ package de.pdfsofortdruck;
 import java.awt.AWTException;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.Locale;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 /**
- * Schließt nach dem Druck den aktiven Edge-Tab per Strg+W – aber nur, wenn im
- * Vordergrund tatsächlich msedge.exe läuft.
+ * Schließt nach dem Druck den aktiven Tab per Strg+W.
+ * Es wird bewusst keine Prozess- oder URL-Prüfung gemacht – der Browser steht beim
+ * Auslösen des Drucks im Vordergrund und bekommt den Fokus nach dem Dialog wieder.
  */
 public final class EdgeTabCloser {
-
-    private static final String EDGE_PROCESS = "msedge";
-
-    private static final String FOREGROUND_SCRIPT = """
-            Add-Type -TypeDefinition 'using System;
-            using System.Runtime.InteropServices;
-            public static class ForegroundWindow {
-                [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
-                [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
-            }'
-            $handle = [ForegroundWindow]::GetForegroundWindow()
-            $processId = [uint32]0
-            [ForegroundWindow]::GetWindowThreadProcessId($handle, [ref]$processId) | Out-Null
-            (Get-Process -Id $processId).ProcessName
-            """;
 
     private final Consumer<String> logger;
 
@@ -39,64 +19,21 @@ public final class EdgeTabCloser {
         this.logger = logger;
     }
 
-    public void closeIfEdgeIsForeground() {
+    public void closeActiveTab() {
         if (!isWindows()) {
-            logger.accept("Edge-Tab schließen ist nur unter Windows verfügbar – übersprungen.");
+            logger.accept("Strg+W wird nur unter Windows gesendet – übersprungen.");
             return;
         }
         try {
-            String output = foregroundProcessName();
-            String process = lastLine(output);
-            if (process == null || !EDGE_PROCESS.equalsIgnoreCase(process)) {
-                logger.accept("Edge-Tab nicht geschlossen – Vordergrund: "
-                        + (process == null ? "unbekannt" : process));
-                if (output.toLowerCase(Locale.ROOT).contains("error")) {
-                    logger.accept("PowerShell-Ausgabe: " + output.replace('\n', ' '));
-                }
-                return;
-            }
             sendCtrlW();
-            logger.accept("Edge-Tab nach dem Druck geschlossen.");
-        } catch (Exception e) {
-            logger.accept("Edge-Tab konnte nicht geschlossen werden: " + e.getMessage());
+            logger.accept("Strg+W nach dem Druck gesendet.");
+        } catch (AWTException e) {
+            logger.accept("Strg+W konnte nicht gesendet werden: " + e.getMessage());
         }
     }
 
     private static boolean isWindows() {
         return System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win");
-    }
-
-    private String foregroundProcessName() throws Exception {
-        // EncodedCommand umgeht Probleme mit Anführungszeichen und Here-Strings in -Command.
-        String encoded = Base64.getEncoder()
-                .encodeToString(FOREGROUND_SCRIPT.getBytes(StandardCharsets.UTF_16LE));
-        ProcessBuilder builder = new ProcessBuilder("powershell.exe", "-NoProfile", "-NonInteractive",
-                "-NoLogo", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass",
-                "-EncodedCommand", encoded);
-        builder.redirectErrorStream(true);
-        Process process = builder.start();
-
-        String output;
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-            output = reader.lines()
-                    .map(String::trim)
-                    .filter(line -> !line.isEmpty())
-                    .collect(Collectors.joining("\n"));
-        }
-        if (!process.waitFor(5, TimeUnit.SECONDS)) {
-            process.destroyForcibly();
-            throw new IllegalStateException("Zeitüberschreitung bei der Fensterprüfung");
-        }
-        return output;
-    }
-
-    private String lastLine(String output) {
-        if (output == null || output.isEmpty()) {
-            return null;
-        }
-        String[] lines = output.split("\\R");
-        return lines[lines.length - 1].trim();
     }
 
     private void sendCtrlW() throws AWTException {

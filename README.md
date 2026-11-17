@@ -71,7 +71,7 @@ Beispiel:
 | `printerName` | Leer = Standarddrucker. Optional der exakte Name eines Druckers (Groß-/Kleinschreibung egal). |
 | `processExistingOnStart` | `false` = schon vorhandene passende Dateien beim Start ignorieren. `true` = auch diese melden. |
 | `deleteAfterPrint` | `true` = die PDF wird nach erfolgreichem Druck gelöscht. `false` = Datei bleibt liegen. Bei Abbruch oder Druckfehler wird nichts gelöscht. |
-| `closeEdgeTabAfterPrint` | `true` = nach erfolgreichem Druck wird `Strg+W` an das Vordergrundfenster gesendet, sofern dort `msedge.exe` läuft. `false` = kein Tastendruck. Bei Abbruch oder Druckfehler wird nichts gesendet. |
+| `closeEdgeTabAfterPrint` | `true` = nach erfolgreichem Druck wird einfach `Strg+W` an das Vordergrundfenster gesendet. `false` = kein Tastendruck. Bei Abbruch oder Druckfehler wird nichts gesendet. |
 
 Fehlt die `config.json`, wird sie beim ersten Start mit Standardwerten angelegt. Als
 Downloadverzeichnis wird dann `Downloads` im Benutzerprofil eingetragen.
@@ -91,10 +91,10 @@ Downloadverzeichnis wird dann `Downloads` im Benutzerprofil eingetragen.
   Schlägt das Löschen fehl, erscheint eine Warnung; der Druckauftrag bleibt trotzdem erfolgt.
 - Tauchen mehrere Dateien gleichzeitig auf, werden die Dialoge nacheinander angezeigt.
 - Der Druckdialog wird immer im Vordergrund geöffnet und nach dem Druck geschlossen.
-- Mit `closeEdgeTabAfterPrint: true` schließt das Programm ca. 300 ms danach den aktiven
-  Edge-Tab per `Strg+W`. Voraussetzung: Im Vordergrund läuft `msedge.exe`; anderenfalls
-  wird nichts gesendet und eine Meldung ins Status-Log geschrieben. Wenn der PDF-Tab der
-  letzte Tab war, schließt sich das gesamte Edge-Fenster.
+- Mit `closeEdgeTabAfterPrint: true` sendet das Programm ca. 300 ms nach dem Druck einfach
+  `Strg+W` an das Vordergrundfenster – ohne Prozess- oder URL-Prüfung. Der Browser steht
+  beim Auslösen des Drucks im Vordergrund und erhält nach dem Dialog wieder den Fokus.
+  Wenn der PDF-Tab der letzte Tab war, schließt sich das gesamte Edge-Fenster.
 - Unter macOS wird das Schließen des Edge-Tabs übersprungen (Windows-only).
 - Ist kein Standarddrucker eingestellt oder der gewünschte Drucker nicht vorhanden,
   erscheint eine Fehlermeldung.

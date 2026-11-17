@@ -52,7 +52,7 @@ public final class PrintDialogManager {
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
-                edgeTabCloser.closeIfEdgeIsForeground();
+                edgeTabCloser.closeActiveTab();
                 SwingUtilities.invokeLater(this::showNext);
             }, "edge-tab-close");
             closer.setDaemon(true);
