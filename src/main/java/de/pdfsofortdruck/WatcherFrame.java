@@ -22,6 +22,7 @@ import java.time.format.DateTimeFormatter;
 /** Kleines Statusfenster des dauerhaft laufenden Wächters. */
 public final class WatcherFrame extends JFrame {
 
+    private static final String VERSION = "v0.01 vom 17.11.2026";
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     private final JTextArea logArea = new JTextArea(10, 50);
@@ -37,11 +38,18 @@ public final class WatcherFrame extends JFrame {
         JLabel settings = new JLabel("Konfiguration: " + configFile);
         settings.setFont(settings.getFont().deriveFont(Font.PLAIN, 11f));
 
+        JLabel version = new JLabel(VERSION);
+        version.setFont(version.getFont().deriveFont(Font.PLAIN, 11f));
+
+        JPanel footer = new JPanel(new BorderLayout());
+        footer.add(settings, BorderLayout.WEST);
+        footer.add(version, BorderLayout.EAST);
+
         JPanel info = new JPanel(new BorderLayout());
         info.setBorder(BorderFactory.createEmptyBorder(12, 14, 8, 14));
         info.add(state, BorderLayout.NORTH);
         info.add(directory, BorderLayout.CENTER);
-        info.add(settings, BorderLayout.SOUTH);
+        info.add(footer, BorderLayout.SOUTH);
 
         logArea.setEditable(false);
         logArea.setLineWrap(true);

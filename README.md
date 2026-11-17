@@ -1,7 +1,8 @@
 # PDF Sofortdruck
 
 Kleine Java/Swing-Oberfläche, die ein Downloadverzeichnis überwacht. Sobald eine Datei
-mit dem Namensformat `210607_148844746850961591.pdf` auftaucht, erscheint ein Dialog.
+mit dem Namensformat `210607_148844746850961591.pdf` – optional auch mit Zähler wie
+`210607_148844746850961591(1).pdf` – auftaucht, erscheint ein Dialog.
 `Drucken` oder die `Enter`-Taste sendet die PDF sofort an den eingestellten Standarddrucker –
 ohne weiteren Druckdialog.
 
@@ -30,7 +31,11 @@ target/pdf-sofortdruck.jar
 2. `config.json` anpassen (siehe unten).
 3. Starten mit `java -jar pdf-sofortdruck.jar` (oder per Doppelklick, falls `.jar` mit Java verknüpft ist).
 
-Das Programm bleibt als kleines Statusfenster geöffnet. `Beenden` beendet den Wächter.
+Das Programm läuft als kleines Statusfenster, das direkt nach dem Start minimiert wird.
+Dort werden auch die Version (`v0.01 vom 17.11.2026`), das überwachte Verzeichnis und die
+ Konfigurationsdatei angezeigt. `Beenden` im Statusfenster beendet den Wächter. Der
+ Druckdialog erscheint unabhängig davon im Vordergrund und schließt sich nach dem Druck
+ automatisch.
 Eine alternative Konfigurationsdatei kann als Argument übergeben werden:
 
 ```bat
@@ -44,7 +49,7 @@ Beispiel:
 ```json
 {
   "downloadDirectory": "C:/Users/Meier/Downloads",
-  "fileNamePattern": "\\d{6}_\\d{18}\\.pdf",
+  "fileNamePattern": "\\d{6}_\\d{18}(?:\\(\\d+\\))?\\.pdf",
   "pollIntervalMs": 1000,
   "stabilityMs": 800,
   "printerName": "",
@@ -56,7 +61,7 @@ Beispiel:
 | Einstellung | Bedeutung |
 | --- | --- |
 | `downloadDirectory` | Zu überwachendes Verzeichnis. Auf Windows funktionieren sowohl `C:/Users/Meier/Downloads` als auch `C:\\Users\\Meier\\Downloads`. |
-| `fileNamePattern` | Regulärer Ausdruck für den Dateinamen. Standard: 6 Ziffern, `_`, 18 Ziffern, `.pdf` (Groß-/Kleinschreibung egal). In JSON muss jeder Backslash verdoppelt werden. |
+| `fileNamePattern` | Regulärer Ausdruck für den Dateinamen. Standard: 6 Ziffern, `_`, 18 Ziffern, optional `(Zähler)`, `.pdf` (Groß-/Kleinschreibung egal). In JSON muss jeder Backslash verdoppelt werden. |
 | `pollIntervalMs` | Prüfabstand in Millisekunden, mindestens 200. |
 | `stabilityMs` | Eine Datei gilt erst nach dieser Zeit ohne Größen-/Zeitänderung als fertig geschrieben. Verhindert Dialoge während des Downloads. |
 | `printerName` | Leer = Standarddrucker. Optional der exakte Name eines Druckers (Groß-/Kleinschreibung egal). |
@@ -68,7 +73,9 @@ Downloadverzeichnis wird dann `Downloads` im Benutzerprofil eingetragen.
 
 ## Verhalten
 
-- Der Standard-Ausdruck `\\d{6}_\\d{18}\\.pdf` passt auf `210607_148844746850961591.pdf`.
+- Der Standard-Ausdruck `\\d{6}_\\d{18}(?:\\(\\d+\\))?\\.pdf` passt auf
+  `210607_148844746850961591.pdf`, `210607_148844746850961591(1).pdf`,
+  `210607_148844746850961591(2).pdf` usw. Der Zähler vor `.pdf` ist optional.
 - Die Datei muss vollständig geschrieben sein, bevor der Dialog erscheint.
 - `Enter` oder `Drucken` löst den Druck aus. Ein Doppelklick bzw. `Enter` plus Button
   erzeugt nur einen Auftrag.
@@ -76,6 +83,7 @@ Downloadverzeichnis wird dann `Downloads` im Benutzerprofil eingetragen.
 - Mit `deleteAfterPrint: true` wird die Datei nur nach erfolgreichem Druck entfernt.
   Schlägt das Löschen fehl, erscheint eine Warnung; der Druckauftrag bleibt trotzdem erfolgt.
 - Tauchen mehrere Dateien gleichzeitig auf, werden die Dialoge nacheinander angezeigt.
+- Der Druckdialog wird immer im Vordergrund geöffnet und nach dem Druck geschlossen.
 - Ist kein Standarddrucker eingestellt oder der gewünschte Drucker nicht vorhanden,
   erscheint eine Fehlermeldung.
 

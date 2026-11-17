@@ -24,10 +24,11 @@ public final class Main {
             WatcherConfig config = WatcherConfig.load(configFile);
 
             WatcherFrame frame = new WatcherFrame(config, configFile);
-            PrintDialogManager dialogs = new PrintDialogManager(frame, config);
+            PrintDialogManager dialogs = new PrintDialogManager(config);
             DownloadWatcher watcher = new DownloadWatcher(config, dialogs::enqueue, frame::log);
             frame.setWatcher(watcher);
             frame.setVisible(true);
+            frame.setState(java.awt.Frame.ICONIFIED); // Statusfenster sofort minimieren
             watcher.start();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null,
