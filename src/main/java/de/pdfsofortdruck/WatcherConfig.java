@@ -14,6 +14,7 @@ public record WatcherConfig(
         Pattern fileNamePattern,
         long pollIntervalMs,
         long stabilityMs,
+        long dialogDelayMs,
         String printerName,
         boolean processExistingOnStart,
         boolean deleteAfterPrint,
@@ -31,6 +32,7 @@ public record WatcherConfig(
                       "fileNamePattern": "\\\\d{6}_\\\\d{18}\\\\.pdf",
                       "pollIntervalMs": 1000,
                       "stabilityMs": 800,
+                      "dialogDelayMs": 800,
                       "printerName": "",
                       "processExistingOnStart": false,
                       "deleteAfterPrint": false,
@@ -51,6 +53,7 @@ public record WatcherConfig(
         String pattern = string(values, "fileNamePattern", DEFAULT_PATTERN);
         long poll = number(values, "pollIntervalMs", 1000);
         long stability = number(values, "stabilityMs", 800);
+        long dialogDelay = number(values, "dialogDelayMs", 800);
         String printer = string(values, "printerName", "");
         boolean existing = bool(values, "processExistingOnStart", false);
         boolean deleteAfterPrint = bool(values, "deleteAfterPrint", false);
@@ -65,6 +68,9 @@ public record WatcherConfig(
         if (stability < 200) {
             throw new IOException("config.json: stabilityMs muss mindestens 200 sein");
         }
+        if (dialogDelay < 0) {
+            throw new IOException("config.json: dialogDelayMs darf nicht negativ sein");
+        }
 
         Pattern compiled;
         try {
@@ -73,7 +79,7 @@ public record WatcherConfig(
             throw new IOException("config.json: ungültiger fileNamePattern: " + e.getMessage(), e);
         }
 
-        return new WatcherConfig(Paths.get(directory), compiled, poll, stability, printer.trim(), existing,
+        return new WatcherConfig(Paths.get(directory), compiled, poll, stability, dialogDelay, printer.trim(), existing,
                 deleteAfterPrint, closeEdgeTabAfterPrint);
     }
 

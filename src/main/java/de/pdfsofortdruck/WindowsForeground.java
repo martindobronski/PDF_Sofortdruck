@@ -93,6 +93,19 @@ final class WindowsForeground {
         return "'" + title(hWnd) + "' (" + handle(hWnd) + ")";
     }
 
+    /** Prüft, ob das angegebene Fenster aktuell den Windows-Vordergrund hat. */
+    static boolean isForeground(Window window) {
+        if (!isWindows()) {
+            return true;
+        }
+        try {
+            Pointer hWnd = Native.getComponentPointer(window);
+            return hWnd != null && hWnd.equals(User32.INSTANCE.GetForegroundWindow());
+        } catch (Throwable e) {
+            return false;
+        }
+    }
+
     /** Bringt den Druckdialog in den Vordergrund und liefert eine Diagnosezeile. */
     static String force(Window window) {
         if (!isWindows()) {
@@ -208,7 +221,7 @@ final class WindowsForeground {
         return String.format("0x%X", Pointer.nativeValue(hWnd));
     }
 
-    private static boolean isWindows() {
+    static boolean isWindows() {
         return System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win");
     }
 }

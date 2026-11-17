@@ -2,6 +2,7 @@ package de.pdfsofortdruck;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
+import javax.swing.Timer;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
@@ -29,6 +30,9 @@ import java.util.function.Consumer;
 /** Dialog, der beim Auftauchen einer passenden PDF angezeigt wird. */
 public final class PrintDialog extends JDialog {
 
+    private static final int FOCUS_CHECK_MS = 150;
+    private static final int FOCUS_WATCHDOG_MS = 2500;
+
     private final Path file;
     private final WatcherConfig config;
     private final Consumer<String> logger;
@@ -37,6 +41,8 @@ public final class PrintDialog extends JDialog {
     private final JButton closeButton = new JButton("Abbrechen");
     private boolean printStarted;
     private boolean printSucceeded;
+    private Timer focusTimer;
+    private long focusWatchdogEnd;
 
     public PrintDialog(Path file, WatcherConfig config, Consumer<String> logger) {
         // Kein Owner: der Dialog bleibt sichtbar, obwohl das Statusfenster minimiert ist.
@@ -123,7 +129,50 @@ public final class PrintDialog extends JDialog {
                 requestFocus();
                 printButton.requestFocus();
             });
+            startFocusWatchdog();
+        } else {
+            stopFocusWatchdog();
         }
+    }
+
+    /**
+     * Der Browser baut seinen Download-Dialog manchmal erst auf, nachdem unser Dialog
+     * erschienen ist, und nimmt ihm dabei den Fokus. Deshalb prüfen wir kurzzeitig, ob
+     * der Dialog noch im Vordergrund ist, und holen den Fokus bei Bedarf zurück.
+     */
+    private void startFocusWatchdog() {
+        if (!WindowsForeground.isWindows()) {
+            return;
+        }
+        focusWatchdogEnd = System.currentTimeMillis() + FOCUS_WATCHDOG_MS;
+        focusTimer = new Timer(FOCUS_CHECK_MS, event -> {
+            if (!isDisplayable() || !isVisible() || System.currentTimeMillis() >= focusWatchdogEnd) {
+                stopFocusWatchdog();
+                return;
+            }
+            if (!WindowsForeground.isForeground(this)) {
+                logger.accept("Druckdialog ohne Fokus – Fokus wird erneut gesetzt.");
+                logger.accept(WindowsForeground.force(this));
+                toFront();
+                requestFocus();
+                printButton.requestFocus();
+            }
+        });
+        focusTimer.setRepeats(true);
+        focusTimer.start();
+    }
+
+    private void stopFocusWatchdog() {
+        if (focusTimer != null) {
+            focusTimer.stop();
+            focusTimer = null;
+        }
+    }
+
+    @Override
+    public void dispose() {
+        stopFocusWatchdog();
+        super.dispose();
     }
 
     private String afterPrintMessage() {

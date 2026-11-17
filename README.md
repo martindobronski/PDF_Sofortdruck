@@ -73,6 +73,7 @@ Beispiel:
   "fileNamePattern": "\\d{6}_\\d{18}\\.pdf",
   "pollIntervalMs": 1000,
   "stabilityMs": 800,
+  "dialogDelayMs": 800,
   "printerName": "",
   "processExistingOnStart": false,
   "deleteAfterPrint": false,
@@ -86,6 +87,7 @@ Beispiel:
 | `fileNamePattern` | Regulärer Ausdruck für den Basis-Dateinamen. Standard: 6 Ziffern, `_`, 18 Ziffern, `.pdf` (Groß-/Kleinschreibung egal). Ein von Browsern angehängter Zähler wird automatisch entfernt und muss nicht im Muster stehen. In JSON muss jeder Backslash verdoppelt werden. |
 | `pollIntervalMs` | Prüfabstand in Millisekunden, mindestens 200. |
 | `stabilityMs` | Eine Datei gilt erst nach dieser Zeit ohne Größen-/Zeitänderung als fertig geschrieben. Verhindert Dialoge während des Downloads. |
+| `dialogDelayMs` | Verzögerung in Millisekunden, bevor der Druckdialog erscheint (Standard `800`, `0` = sofort). Gibt dem Browser Zeit, seinen Download-Dialog aufzubauen, damit er dem Druckdialog nicht den Fokus wegnimmt. |
 | `printerName` | Leer = Standarddrucker. Optional der exakte Name eines Druckers (Groß-/Kleinschreibung egal). |
 | `processExistingOnStart` | `false` = schon vorhandene passende Dateien beim Start ignorieren. `true` = auch diese melden. |
 | `deleteAfterPrint` | `true` = die PDF wird nach erfolgreichem Druck gelöscht. `false` = Datei bleibt liegen. Bei Abbruch oder Druckfehler wird nichts gelöscht. |
@@ -109,6 +111,8 @@ Downloadverzeichnis wird dann `Downloads` im Benutzerprofil eingetragen.
   Schlägt das Löschen fehl, erscheint eine Warnung; der Druckauftrag bleibt trotzdem erfolgt.
 - Tauchen mehrere Dateien gleichzeitig auf, werden die Dialoge nacheinander angezeigt.
 - Der Druckdialog wird immer im Vordergrund geöffnet und nach dem Druck geschlossen.
+- Falls der Browser-Download-Dialog kurz danach den Fokus übernimmt, holt der Dialog ihn
+  innerhalb der ersten ca. 2,5 Sekunden selbst zurück (`Druckdialog ohne Fokus – ...` im Log).
 - Mit `closeEdgeTabAfterPrint: true` sendet das Programm ca. 300 ms nach dem Druck einfach
   `Strg+W` an das Vordergrundfenster – ohne Prozess- oder URL-Prüfung. Der Browser steht
   beim Auslösen des Drucks im Vordergrund und erhält nach dem Dialog wieder den Fokus.
