@@ -30,8 +30,9 @@ import java.util.function.Consumer;
 /** Dialog, der beim Auftauchen einer passenden PDF angezeigt wird. */
 public final class PrintDialog extends JDialog {
 
-    private static final int FOCUS_CHECK_MS = 150;
-    private static final int FOCUS_WATCHDOG_MS = 2500;
+    private static final int FOCUS_CHECK_MS = 200;
+    private static final int FOCUS_WATCHDOG_MS = 8000;
+    private static final int FOCUS_STABLE_CHECKS = 5; // 1 s stabil im Vordergrund
 
     private final Path file;
     private final WatcherConfig config;
@@ -43,6 +44,7 @@ public final class PrintDialog extends JDialog {
     private boolean printSucceeded;
     private Timer focusTimer;
     private long focusWatchdogEnd;
+    private int focusConfirmedChecks;
 
     public PrintDialog(Path file, WatcherConfig config, Consumer<String> logger) {
         // Kein Owner: der Dialog bleibt sichtbar, obwohl das Statusfenster minimiert ist.
@@ -107,6 +109,20 @@ public final class PrintDialog extends JDialog {
             }
         });
 
+        // WICHTIG: setVisible(true) blockiert bei einem modalen Dialog bis dispose().
+        // Der Fokus muss daher in windowOpened gesetzt werden - nicht nach setVisible().
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowOpened(WindowEvent event) {
+                logger.accept("Druckdialog geöffnet – Fokus wird gesetzt.");
+                EventQueue.invokeLater(() -> {
+                    logger.accept(WindowsForeground.force(PrintDialog.this));
+                    applyFocus();
+                });
+                startFocusWatchdog();
+            }
+        });
+
         setMinimumSize(new Dimension(460, 180));
         setResizable(false);
         setAlwaysOnTop(true);
@@ -118,21 +134,10 @@ public final class PrintDialog extends JDialog {
         return printSucceeded;
     }
 
-    @Override
-    public void setVisible(boolean visible) {
-        super.setVisible(visible);
-        if (visible) {
-            // Der Dialog hat keinen Owner; Fokus daher explizit nach dem Anzeigen setzen.
-            EventQueue.invokeLater(() -> {
-                logger.accept(WindowsForeground.force(this));
-                toFront();
-                requestFocus();
-                printButton.requestFocus();
-            });
-            startFocusWatchdog();
-        } else {
-            stopFocusWatchdog();
-        }
+    private void applyFocus() {
+        toFront();
+        requestFocus();
+        printButton.requestFocus();
     }
 
     /**
@@ -145,18 +150,24 @@ public final class PrintDialog extends JDialog {
             return;
         }
         focusWatchdogEnd = System.currentTimeMillis() + FOCUS_WATCHDOG_MS;
+        focusConfirmedChecks = 0;
         focusTimer = new Timer(FOCUS_CHECK_MS, event -> {
             if (!isDisplayable() || !isVisible() || System.currentTimeMillis() >= focusWatchdogEnd) {
+                logger.accept("Fokusüberwachung beendet.");
                 stopFocusWatchdog();
                 return;
             }
-            if (!WindowsForeground.isForeground(this)) {
-                logger.accept("Druckdialog ohne Fokus – Fokus wird erneut gesetzt.");
-                logger.accept(WindowsForeground.force(this));
-                toFront();
-                requestFocus();
-                printButton.requestFocus();
+            if (WindowsForeground.isForeground(this)) {
+                if (++focusConfirmedChecks >= FOCUS_STABLE_CHECKS) {
+                    logger.accept("Druckdialog hat stabil den Fokus – Überwachung beendet.");
+                    stopFocusWatchdog();
+                }
+                return;
             }
+            focusConfirmedChecks = 0;
+            logger.accept("Druckdialog ohne Fokus – Fokus wird erneut gesetzt.");
+            logger.accept(WindowsForeground.force(this));
+            applyFocus();
         });
         focusTimer.setRepeats(true);
         focusTimer.start();

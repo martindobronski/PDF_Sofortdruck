@@ -111,8 +111,11 @@ Downloadverzeichnis wird dann `Downloads` im Benutzerprofil eingetragen.
   Schlägt das Löschen fehl, erscheint eine Warnung; der Druckauftrag bleibt trotzdem erfolgt.
 - Tauchen mehrere Dateien gleichzeitig auf, werden die Dialoge nacheinander angezeigt.
 - Der Druckdialog wird immer im Vordergrund geöffnet und nach dem Druck geschlossen.
-- Falls der Browser-Download-Dialog kurz danach den Fokus übernimmt, holt der Dialog ihn
-  innerhalb der ersten ca. 2,5 Sekunden selbst zurück (`Druckdialog ohne Fokus – ...` im Log).
+- Der Fokus wird beim Öffnen des Dialogs explizit gesetzt (nicht erst beim Schließen – bei
+  einem modalen Dialog blockiert `setVisible(true)` bis `dispose()`). Falls der
+  Browser-Download-Dialog ihn danach übernimmt, holt der Dialog ihn bis zu 8 Sekunden lang
+  selbst zurück und beendet die Überwachung, sobald er eine Sekunde stabil im Vordergrund
+  war (`Druckdialog ohne Fokus – ...` im Log).
 - Mit `closeEdgeTabAfterPrint: true` sendet das Programm ca. 300 ms nach dem Druck einfach
   `Strg+W` an das Vordergrundfenster – ohne Prozess- oder URL-Prüfung. Der Browser steht
   beim Auslösen des Drucks im Vordergrund und erhält nach dem Dialog wieder den Fokus.

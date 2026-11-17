@@ -151,6 +151,11 @@ final class WindowsForeground {
         try {
             user.keybd_event(VK_MENU, (byte) 0, 0, null);
             user.keybd_event(VK_MENU, (byte) 0, KEYEVENTF_KEYUP, null);
+            // Windows muss die synthetische Eingabe erst verarbeiten, sonst wird
+            // SetForegroundWindow beim allerersten Aufruf noch abgelehnt.
+            Thread.sleep(40);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         } catch (Throwable ignored) {
             // Optional – der Rest wird trotzdem versucht.
         }
