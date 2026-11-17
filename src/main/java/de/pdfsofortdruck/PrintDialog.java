@@ -31,6 +31,7 @@ public final class PrintDialog extends JDialog {
     private final JButton printButton = new JButton("Drucken");
     private final JButton closeButton = new JButton("Abbrechen");
     private boolean printStarted;
+    private boolean printSucceeded;
 
     public PrintDialog(Path file, WatcherConfig config) {
         // Kein Owner: der Dialog bleibt sichtbar, obwohl das Statusfenster minimiert ist.
@@ -93,6 +94,10 @@ public final class PrintDialog extends JDialog {
         setLocationRelativeTo(null);
     }
 
+    public boolean isPrintSucceeded() {
+        return printSucceeded;
+    }
+
     @Override
     public void setVisible(boolean visible) {
         super.setVisible(visible);
@@ -137,6 +142,7 @@ public final class PrintDialog extends JDialog {
                 closeButton.setText("Schließen");
                 try {
                     get();
+                    printSucceeded = true;
                     afterPrintMessage();
                 } catch (Exception e) {
                     Throwable cause = e instanceof ExecutionException ? e.getCause() : e;

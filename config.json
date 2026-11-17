@@ -5,5 +5,6 @@
   "stabilityMs": 800,
   "printerName": "",
   "processExistingOnStart": false,
-  "deleteAfterPrint": false
+  "deleteAfterPrint": false,
+  "closeEdgeTabAfterPrint": true
 }

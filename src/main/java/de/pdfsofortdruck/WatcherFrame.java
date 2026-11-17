@@ -24,7 +24,7 @@ import java.time.format.DateTimeFormatter;
 /** Kleines Statusfenster des dauerhaft laufenden Wächters. */
 public final class WatcherFrame extends JFrame {
 
-    private static final String VERSION = "v0.01 vom 17.11.2026";
+    private static final String VERSION = "v0.02 vom 17.11.2026";
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     private final JTextArea logArea = new JTextArea(10, 50);

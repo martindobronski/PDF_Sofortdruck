@@ -33,7 +33,7 @@ target/pdf-sofortdruck.jar
 
 Das Programm läuft als kleines Statusfenster, das direkt nach dem Start minimiert wird
 und dauerhaft minimiert bleibt – es kann nicht in den Vordergrund kommen. Dort werden
-auch die Version (`v0.01 vom 17.11.2026`), das überwachte Verzeichnis und die
+auch die Version (`v0.02 vom 17.11.2026`), das überwachte Verzeichnis und die
 Konfigurationsdatei angezeigt. Der Druckdialog erscheint unabhängig davon im Vordergrund
 und schließt sich nach dem Druck automatisch. Zum Beenden das Statusfenster in der
 Windows-Taskleiste schließen.
@@ -49,25 +49,27 @@ Beispiel:
 
 ```json
 {
-  "downloadDirectory": "C:/Users/Meier/Downloads",
+  "downloadDirectory": "C:/MD/Download",
   "fileNamePattern": "\\d{6}_\\d{18}\\.pdf",
   "pollIntervalMs": 1000,
   "stabilityMs": 800,
   "printerName": "",
   "processExistingOnStart": false,
-  "deleteAfterPrint": false
+  "deleteAfterPrint": false,
+  "closeEdgeTabAfterPrint": true
 }
 ```
 
 | Einstellung | Bedeutung |
 | --- | --- |
-| `downloadDirectory` | Zu überwachendes Verzeichnis. Auf Windows funktionieren sowohl `C:/Users/Meier/Downloads` als auch `C:\\Users\\Meier\\Downloads`. |
+| `downloadDirectory` | Zu überwachendes Verzeichnis. Auf Windows funktionieren sowohl `C:/MD/Download` als auch `C:\\MD\\Download`. |
 | `fileNamePattern` | Regulärer Ausdruck für den Basis-Dateinamen. Standard: 6 Ziffern, `_`, 18 Ziffern, `.pdf` (Groß-/Kleinschreibung egal). Ein von Browsern angehängter Zähler wird automatisch entfernt und muss nicht im Muster stehen. In JSON muss jeder Backslash verdoppelt werden. |
 | `pollIntervalMs` | Prüfabstand in Millisekunden, mindestens 200. |
 | `stabilityMs` | Eine Datei gilt erst nach dieser Zeit ohne Größen-/Zeitänderung als fertig geschrieben. Verhindert Dialoge während des Downloads. |
 | `printerName` | Leer = Standarddrucker. Optional der exakte Name eines Druckers (Groß-/Kleinschreibung egal). |
 | `processExistingOnStart` | `false` = schon vorhandene passende Dateien beim Start ignorieren. `true` = auch diese melden. |
 | `deleteAfterPrint` | `true` = die PDF wird nach erfolgreichem Druck gelöscht. `false` = Datei bleibt liegen. Bei Abbruch oder Druckfehler wird nichts gelöscht. |
+| `closeEdgeTabAfterPrint` | `true` = nach erfolgreichem Druck wird `Strg+W` an das Vordergrundfenster gesendet, sofern dort `msedge.exe` läuft. `false` = kein Tastendruck. Bei Abbruch oder Druckfehler wird nichts gesendet. |
 
 Fehlt die `config.json`, wird sie beim ersten Start mit Standardwerten angelegt. Als
 Downloadverzeichnis wird dann `Downloads` im Benutzerprofil eingetragen.
@@ -87,6 +89,11 @@ Downloadverzeichnis wird dann `Downloads` im Benutzerprofil eingetragen.
   Schlägt das Löschen fehl, erscheint eine Warnung; der Druckauftrag bleibt trotzdem erfolgt.
 - Tauchen mehrere Dateien gleichzeitig auf, werden die Dialoge nacheinander angezeigt.
 - Der Druckdialog wird immer im Vordergrund geöffnet und nach dem Druck geschlossen.
+- Mit `closeEdgeTabAfterPrint: true` schließt das Programm ca. 300 ms danach den aktiven
+  Edge-Tab per `Strg+W`. Voraussetzung: Im Vordergrund läuft `msedge.exe`; anderenfalls
+  wird nichts gesendet und eine Meldung ins Status-Log geschrieben. Wenn der PDF-Tab der
+  letzte Tab war, schließt sich das gesamte Edge-Fenster.
+- Unter macOS wird das Schließen des Edge-Tabs übersprungen (Windows-only).
 - Ist kein Standarddrucker eingestellt oder der gewünschte Drucker nicht vorhanden,
   erscheint eine Fehlermeldung.
 
@@ -112,5 +119,6 @@ src/main/java/de/pdfsofortdruck/
 ├── PrintDialogManager.java  Warteschlange für mehrere Dialoge
 ├── PrintDialog.java      Dialog mit Drucken/Enter
 ├── PdfPrinter.java       Drucken auf den Standarddrucker
+├── EdgeTabCloser.java    Edge-Tab nach Druck per Strg+W schließen (Windows)
 └── WatcherFrame.java     Statusfenster
 ```

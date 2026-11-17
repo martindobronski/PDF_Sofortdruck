@@ -24,7 +24,7 @@ public final class Main {
             WatcherConfig config = WatcherConfig.load(configFile);
 
             WatcherFrame frame = new WatcherFrame(config, configFile);
-            PrintDialogManager dialogs = new PrintDialogManager(config);
+            PrintDialogManager dialogs = new PrintDialogManager(config, new EdgeTabCloser(frame::log));
             DownloadWatcher watcher = new DownloadWatcher(config, dialogs::enqueue, frame::log);
             frame.setWatcher(watcher);
             frame.setVisible(true);

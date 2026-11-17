@@ -6,7 +6,7 @@
 
   <groupId>de.pdfsofortdruck</groupId>
   <artifactId>pdf-sofortdruck</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
   <name>PDF Sofortdruck</name>
 
   <properties>

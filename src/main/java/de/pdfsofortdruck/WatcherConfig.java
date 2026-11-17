@@ -16,7 +16,8 @@ public record WatcherConfig(
         long stabilityMs,
         String printerName,
         boolean processExistingOnStart,
-        boolean deleteAfterPrint) {
+        boolean deleteAfterPrint,
+        boolean closeEdgeTabAfterPrint) {
 
     private static final String DEFAULT_PATTERN = "\\d{6}_\\d{18}\\.pdf";
 
@@ -32,7 +33,8 @@ public record WatcherConfig(
                       "stabilityMs": 800,
                       "printerName": "",
                       "processExistingOnStart": false,
-                      "deleteAfterPrint": false
+                      "deleteAfterPrint": false,
+                      "closeEdgeTabAfterPrint": false
                     }
                     """.formatted(escapeJson(defaultDownload));
             Path parent = configFile.toAbsolutePath().getParent();
@@ -52,6 +54,7 @@ public record WatcherConfig(
         String printer = string(values, "printerName", "");
         boolean existing = bool(values, "processExistingOnStart", false);
         boolean deleteAfterPrint = bool(values, "deleteAfterPrint", false);
+        boolean closeEdgeTabAfterPrint = bool(values, "closeEdgeTabAfterPrint", false);
 
         if (directory.isBlank()) {
             throw new IOException("config.json: downloadDirectory darf nicht leer sein");
@@ -71,7 +74,7 @@ public record WatcherConfig(
         }
 
         return new WatcherConfig(Paths.get(directory), compiled, poll, stability, printer.trim(), existing,
-                deleteAfterPrint);
+                deleteAfterPrint, closeEdgeTabAfterPrint);
     }
 
     private static String string(Map<String, Object> values, String key, String fallback) throws IOException {
