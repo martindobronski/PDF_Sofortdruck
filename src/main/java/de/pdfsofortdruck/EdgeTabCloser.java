@@ -6,6 +6,7 @@ import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -20,14 +21,12 @@ public final class EdgeTabCloser {
     private static final String EDGE_PROCESS = "msedge";
 
     private static final String FOREGROUND_SCRIPT = """
-            Add-Type @"
-            using System;
+            Add-Type -TypeDefinition 'using System;
             using System.Runtime.InteropServices;
             public static class ForegroundWindow {
                 [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
                 [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
-            }
-            "@
+            }'
             $handle = [ForegroundWindow]::GetForegroundWindow()
             $processId = [uint32]0
             [ForegroundWindow]::GetWindowThreadProcessId($handle, [ref]$processId) | Out-Null
@@ -46,10 +45,14 @@ public final class EdgeTabCloser {
             return;
         }
         try {
-            String process = foregroundProcessName();
+            String output = foregroundProcessName();
+            String process = lastLine(output);
             if (process == null || !EDGE_PROCESS.equalsIgnoreCase(process)) {
                 logger.accept("Edge-Tab nicht geschlossen – Vordergrund: "
                         + (process == null ? "unbekannt" : process));
+                if (output.toLowerCase(Locale.ROOT).contains("error")) {
+                    logger.accept("PowerShell-Ausgabe: " + output.replace('\n', ' '));
+                }
                 return;
             }
             sendCtrlW();
@@ -64,9 +67,12 @@ public final class EdgeTabCloser {
     }
 
     private String foregroundProcessName() throws Exception {
+        // EncodedCommand umgeht Probleme mit Anführungszeichen und Here-Strings in -Command.
+        String encoded = Base64.getEncoder()
+                .encodeToString(FOREGROUND_SCRIPT.getBytes(StandardCharsets.UTF_16LE));
         ProcessBuilder builder = new ProcessBuilder("powershell.exe", "-NoProfile", "-NonInteractive",
                 "-NoLogo", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass",
-                "-Command", FOREGROUND_SCRIPT);
+                "-EncodedCommand", encoded);
         builder.redirectErrorStream(true);
         Process process = builder.start();
 
@@ -82,7 +88,11 @@ public final class EdgeTabCloser {
             process.destroyForcibly();
             throw new IllegalStateException("Zeitüberschreitung bei der Fensterprüfung");
         }
-        if (output.isEmpty()) {
+        return output;
+    }
+
+    private String lastLine(String output) {
+        if (output == null || output.isEmpty()) {
             return null;
         }
         String[] lines = output.split("\\R");
