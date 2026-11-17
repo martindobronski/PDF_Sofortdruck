@@ -41,6 +41,7 @@ public final class PrintDialog extends JDialog {
         super((Frame) null, "PDF sofort drucken", true);
         this.file = file;
         this.config = config;
+        closeButton.setFocusable(false); // Enter darf niemals "Abbrechen" auslösen.
 
         JLabel headline = new JLabel("Neue Druckdatei gefunden");
         headline.setFont(headline.getFont().deriveFont(Font.BOLD, 15f));
