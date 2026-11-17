@@ -32,8 +32,9 @@ public final class PrintDialog extends JDialog {
     private final JButton closeButton = new JButton("Abbrechen");
     private boolean printStarted;
 
-    public PrintDialog(Frame owner, Path file, WatcherConfig config) {
-        super(owner, "PDF sofort drucken", true);
+    public PrintDialog(Path file, WatcherConfig config) {
+        // Kein Owner: der Dialog bleibt sichtbar, obwohl das Statusfenster minimiert ist.
+        super((Frame) null, "PDF sofort drucken", true);
         this.file = file;
         this.config = config;
 
@@ -87,14 +88,16 @@ public final class PrintDialog extends JDialog {
 
         setMinimumSize(new Dimension(460, 180));
         setResizable(false);
+        setAlwaysOnTop(true);
         pack();
-        setLocationRelativeTo(owner);
+        setLocationRelativeTo(null);
     }
 
     @Override
     public void setVisible(boolean visible) {
         super.setVisible(visible);
         if (visible) {
+            toFront();
             printButton.requestFocusInWindow();
         }
     }
@@ -134,13 +137,15 @@ public final class PrintDialog extends JDialog {
                 closeButton.setText("Schließen");
                 try {
                     get();
-                    statusLabel.setText(afterPrintMessage());
+                    afterPrintMessage();
                 } catch (Exception e) {
                     Throwable cause = e instanceof ExecutionException ? e.getCause() : e;
                     statusLabel.setText("Druck fehlgeschlagen.");
                     JOptionPane.showMessageDialog(PrintDialog.this,
                             "Die Datei konnte nicht gedruckt werden:\n" + cause.getMessage(),
                             "Druckfehler", JOptionPane.ERROR_MESSAGE);
+                } finally {
+                    dispose(); // Dialog nach dem Druckauftrag schließen.
                 }
             }
         }.execute();
