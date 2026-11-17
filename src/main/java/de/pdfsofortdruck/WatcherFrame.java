@@ -13,8 +13,10 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Frame;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.event.WindowStateListener;
 import java.nio.file.Path;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -75,6 +77,16 @@ public final class WatcherFrame extends JFrame {
                 exit();
             }
         });
+
+        // Das Statusfenster darf niemals in den Vordergrund kommen.
+        setFocusableWindowState(false);
+        setAutoRequestFocus(false);
+        addWindowStateListener(event -> {
+            if ((event.getNewState() & Frame.ICONIFIED) == 0) {
+                setState(Frame.ICONIFIED);
+            }
+        });
+
         setMinimumSize(new Dimension(560, 280));
         setLocationRelativeTo(null);
         pack();

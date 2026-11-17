@@ -10,11 +10,16 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /** Überwacht das Downloadverzeichnis und meldet neue, fertig geschriebene PDF-Dateien. */
 public final class DownloadWatcher implements AutoCloseable {
+
+    /** Browser hängen vor ".pdf" " (1)", "(2)", ... an – mit oder ohne Leerzeichen. */
+    private static final Pattern COUNTER_SUFFIX =
+            Pattern.compile("\\s*\\(\\d+\\)(?=\\.pdf$)", Pattern.CASE_INSENSITIVE);
 
     private record Candidate(long size, long lastModified, long firstSeen) {
     }
@@ -103,11 +108,17 @@ public final class DownloadWatcher implements AutoCloseable {
         handled.retainAll(present);
     }
 
+    private boolean matches(Path file) {
+        String name = file.getFileName().toString();
+        String baseName = COUNTER_SUFFIX.matcher(name).replaceFirst("");
+        return config.fileNamePattern().matcher(baseName).matches();
+    }
+
     private Set<Path> listMatchingFiles() throws IOException {
         Set<Path> result = new HashSet<>();
         try (Stream<Path> files = Files.list(config.downloadDirectory())) {
             files.filter(Files::isRegularFile)
-                    .filter(path -> config.fileNamePattern().matcher(path.getFileName().toString()).matches())
+                    .filter(path -> matches(path))
                     .forEach(result::add);
         }
         return result;

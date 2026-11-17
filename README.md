@@ -31,11 +31,12 @@ target/pdf-sofortdruck.jar
 2. `config.json` anpassen (siehe unten).
 3. Starten mit `java -jar pdf-sofortdruck.jar` (oder per Doppelklick, falls `.jar` mit Java verknüpft ist).
 
-Das Programm läuft als kleines Statusfenster, das direkt nach dem Start minimiert wird.
-Dort werden auch die Version (`v0.01 vom 17.11.2026`), das überwachte Verzeichnis und die
- Konfigurationsdatei angezeigt. `Beenden` im Statusfenster beendet den Wächter. Der
- Druckdialog erscheint unabhängig davon im Vordergrund und schließt sich nach dem Druck
- automatisch.
+Das Programm läuft als kleines Statusfenster, das direkt nach dem Start minimiert wird
+und dauerhaft minimiert bleibt – es kann nicht in den Vordergrund kommen. Dort werden
+auch die Version (`v0.01 vom 17.11.2026`), das überwachte Verzeichnis und die
+Konfigurationsdatei angezeigt. Der Druckdialog erscheint unabhängig davon im Vordergrund
+und schließt sich nach dem Druck automatisch. Zum Beenden das Statusfenster in der
+Windows-Taskleiste schließen.
 Eine alternative Konfigurationsdatei kann als Argument übergeben werden:
 
 ```bat
@@ -49,7 +50,7 @@ Beispiel:
 ```json
 {
   "downloadDirectory": "C:/Users/Meier/Downloads",
-  "fileNamePattern": "\\d{6}_\\d{18}(?:\\(\\d+\\))?\\.pdf",
+  "fileNamePattern": "\\d{6}_\\d{18}\\.pdf",
   "pollIntervalMs": 1000,
   "stabilityMs": 800,
   "printerName": "",
@@ -61,7 +62,7 @@ Beispiel:
 | Einstellung | Bedeutung |
 | --- | --- |
 | `downloadDirectory` | Zu überwachendes Verzeichnis. Auf Windows funktionieren sowohl `C:/Users/Meier/Downloads` als auch `C:\\Users\\Meier\\Downloads`. |
-| `fileNamePattern` | Regulärer Ausdruck für den Dateinamen. Standard: 6 Ziffern, `_`, 18 Ziffern, optional `(Zähler)`, `.pdf` (Groß-/Kleinschreibung egal). In JSON muss jeder Backslash verdoppelt werden. |
+| `fileNamePattern` | Regulärer Ausdruck für den Basis-Dateinamen. Standard: 6 Ziffern, `_`, 18 Ziffern, `.pdf` (Groß-/Kleinschreibung egal). Ein von Browsern angehängter Zähler wird automatisch entfernt und muss nicht im Muster stehen. In JSON muss jeder Backslash verdoppelt werden. |
 | `pollIntervalMs` | Prüfabstand in Millisekunden, mindestens 200. |
 | `stabilityMs` | Eine Datei gilt erst nach dieser Zeit ohne Größen-/Zeitänderung als fertig geschrieben. Verhindert Dialoge während des Downloads. |
 | `printerName` | Leer = Standarddrucker. Optional der exakte Name eines Druckers (Groß-/Kleinschreibung egal). |
@@ -73,9 +74,11 @@ Downloadverzeichnis wird dann `Downloads` im Benutzerprofil eingetragen.
 
 ## Verhalten
 
-- Der Standard-Ausdruck `\\d{6}_\\d{18}(?:\\(\\d+\\))?\\.pdf` passt auf
-  `210607_148844746850961591.pdf`, `210607_148844746850961591(1).pdf`,
-  `210607_148844746850961591(2).pdf` usw. Der Zähler vor `.pdf` ist optional.
+- Der Standard-Ausdruck `\\d{6}_\\d{18}\\.pdf` passt auf `210607_148844746850961591.pdf`.
+- Bei jedem weiteren Download hängt der Browser einen Zähler an. Sowohl
+  `210607_148844746850961591(1).pdf` als auch `210607_148844746850961591 (1).pdf`
+  (mit Leerzeichen) und höhere Zähler werden ebenfalls erkannt. Der Zähler wird vor dem
+  Abgleich mit dem Muster entfernt, daher funktioniert das auch mit bereits vorhandenen Konfigurationen.
 - Die Datei muss vollständig geschrieben sein, bevor der Dialog erscheint.
 - `Enter` oder `Drucken` löst den Druck aus. Ein Doppelklick bzw. `Enter` plus Button
   erzeugt nur einen Auftrag.

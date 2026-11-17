@@ -18,7 +18,7 @@ public record WatcherConfig(
         boolean processExistingOnStart,
         boolean deleteAfterPrint) {
 
-    private static final String DEFAULT_PATTERN = "\\d{6}_\\d{18}(?:\\(\\d+\\))?\\.pdf";
+    private static final String DEFAULT_PATTERN = "\\d{6}_\\d{18}\\.pdf";
 
     /** Lädt die Konfiguration und legt sie beim ersten Start mit Standardwerten an. */
     public static WatcherConfig load(Path configFile) throws IOException {
@@ -27,7 +27,7 @@ public record WatcherConfig(
             String json = """
                     {
                       "downloadDirectory": "%s",
-                      "fileNamePattern": "\\\\d{6}_\\\\d{18}(?:\\\\(\\\\d+\\\\))?\\\\.pdf",
+                      "fileNamePattern": "\\\\d{6}_\\\\d{18}\\\\.pdf",
                       "pollIntervalMs": 1000,
                       "stabilityMs": 800,
                       "printerName": "",
