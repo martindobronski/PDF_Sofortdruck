@@ -34,9 +34,11 @@ target/pdf-sofortdruck.jar
 Das Programm läuft als kleines Statusfenster, das direkt nach dem Start minimiert wird
 und dauerhaft minimiert bleibt – es kann nicht in den Vordergrund kommen. Dort werden
 auch die Version (`v0.02 vom 17.11.2026`), das überwachte Verzeichnis und die
-Konfigurationsdatei angezeigt. Der Druckdialog erscheint unabhängig davon im Vordergrund
-und schließt sich nach dem Druck automatisch. Zum Beenden das Statusfenster in der
-Windows-Taskleiste schließen.
+Konfigurationsdatei angezeigt. Zusätzlich wird neben der `config.json` die Datei
+`pdf-sofortdruck.log` mit allen Meldungen geschrieben – hilfreich, weil das Statusfenster
+minimiert bleibt. Der Druckdialog erscheint unabhängig davon im Vordergrund und schließt
+sich nach dem Druck automatisch. Zum Beenden das Statusfenster in der Windows-Taskleiste
+schließen.
 Eine alternative Konfigurationsdatei kann als Argument übergeben werden:
 
 ```bat

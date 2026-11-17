@@ -65,7 +65,8 @@ public final class EdgeTabCloser {
 
     private String foregroundProcessName() throws Exception {
         ProcessBuilder builder = new ProcessBuilder("powershell.exe", "-NoProfile", "-NonInteractive",
-                "-ExecutionPolicy", "Bypass", "-Command", FOREGROUND_SCRIPT);
+                "-NoLogo", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass",
+                "-Command", FOREGROUND_SCRIPT);
         builder.redirectErrorStream(true);
         Process process = builder.start();
 

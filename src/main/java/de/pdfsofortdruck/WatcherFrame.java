@@ -17,7 +17,11 @@ import java.awt.Frame;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowStateListener;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
@@ -28,10 +32,13 @@ public final class WatcherFrame extends JFrame {
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     private final JTextArea logArea = new JTextArea(10, 50);
+    private final Path logFile;
     private DownloadWatcher watcher;
 
     public WatcherFrame(WatcherConfig config, Path configFile) {
         super("PDF Sofortdruck – Wächter");
+        Path parent = configFile.toAbsolutePath().getParent();
+        logFile = (parent != null ? parent : Path.of("")).resolve("pdf-sofortdruck.log");
 
         JLabel state = new JLabel("Wächter läuft. Neue PDFs werden automatisch gemeldet.");
         state.setFont(state.getFont().deriveFont(Font.BOLD, 13f));
@@ -98,8 +105,19 @@ public final class WatcherFrame extends JFrame {
 
     /** Kann auch aus dem Wächter-Thread aufgerufen werden. */
     public void log(String message) {
+        String line = LocalTime.now().format(TIME) + "  " + message;
+        try {
+            Path parent = logFile.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+            Files.writeString(logFile, line + System.lineSeparator(), StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+        } catch (IOException ignored) {
+            // Logging darf den Wächter nicht beeinträchtigen.
+        }
         SwingUtilities.invokeLater(() -> {
-            logArea.append(LocalTime.now().format(TIME) + "  " + message + "\n");
+            logArea.append(line + "\n");
             logArea.setCaretPosition(logArea.getDocument().getLength());
         });
     }
