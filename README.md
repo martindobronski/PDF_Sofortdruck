@@ -31,6 +31,12 @@ target/pdf-sofortdruck.jar
 2. `config.json` anpassen (siehe unten).
 3. Starten mit `java -jar pdf-sofortdruck.jar` (oder per Doppelklick, falls `.jar` mit Java verknüpft ist).
 
+**Wichtig für eine abgespeckte JRE/jlink-Runtime:** `java.awt.Robot` (für `Strg+W`) gehört
+zum Modul `java.desktop` und benötigt dessen native `awt.dll` aus der Runtime. Eine
+jlink-Runtime muss daher mindestens `java.desktop` enthalten. Beim Start schreibt das
+Programm `Robot (Tastatureingabe) verfügbar.` bzw. eine Fehlermeldung in
+`pdf-sofortdruck.log`. Im Zweifel die Jar mit einer vollständigen JRE starten.
+
 Das Programm läuft als kleines Statusfenster, das direkt nach dem Start minimiert wird
 und dauerhaft minimiert bleibt – es kann nicht in den Vordergrund kommen. Dort werden
 auch die Version (`v0.02 vom 17.11.2026`), das überwachte Verzeichnis und die

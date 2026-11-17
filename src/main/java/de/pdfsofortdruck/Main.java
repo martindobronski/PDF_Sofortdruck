@@ -3,6 +3,7 @@ package de.pdfsofortdruck;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import java.awt.Robot;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -27,6 +28,14 @@ public final class Main {
             PrintDialogManager dialogs = new PrintDialogManager(config, new EdgeTabCloser(frame::log));
             DownloadWatcher watcher = new DownloadWatcher(config, dialogs::enqueue, frame::log);
             frame.setWatcher(watcher);
+            frame.log("Java " + System.getProperty("java.version")
+                    + ", Runtime: " + System.getProperty("java.home"));
+            try {
+                new Robot();
+                frame.log("Robot (Tastatureingabe) verfügbar.");
+            } catch (Throwable e) {
+                frame.log("Robot (Tastatureingabe) NICHT verfügbar: " + e);
+            }
             frame.setVisible(true);
             frame.setState(java.awt.Frame.ICONIFIED); // Statusfenster sofort minimieren
             watcher.start();
