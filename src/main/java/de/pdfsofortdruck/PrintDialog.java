@@ -12,11 +12,14 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingWorker;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -87,6 +90,13 @@ public final class PrintDialog extends JDialog {
             }
         });
 
+        addWindowFocusListener(new WindowAdapter() {
+            @Override
+            public void windowGainedFocus(WindowEvent event) {
+                printButton.requestFocusInWindow();
+            }
+        });
+
         setMinimumSize(new Dimension(460, 180));
         setResizable(false);
         setAlwaysOnTop(true);
@@ -102,8 +112,12 @@ public final class PrintDialog extends JDialog {
     public void setVisible(boolean visible) {
         super.setVisible(visible);
         if (visible) {
-            toFront();
-            printButton.requestFocusInWindow();
+            // Der Dialog hat keinen Owner; Fokus daher explizit nach dem Anzeigen setzen.
+            EventQueue.invokeLater(() -> {
+                toFront();
+                requestFocus();
+                printButton.requestFocus();
+            });
         }
     }
 
