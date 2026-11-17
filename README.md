@@ -1,5 +1,7 @@
 # PDF Sofortdruck
 
+Ausführliche Betriebs- und Nachschlageanleitung: [ANLEITUNG.md](ANLEITUNG.md)
+
 Kleine Java/Swing-Oberfläche, die ein Downloadverzeichnis überwacht. Sobald eine Datei
 mit dem Namensformat `210607_148844746850961591.pdf` – optional auch mit Zähler wie
 `210607_148844746850961591(1).pdf` – auftaucht, erscheint ein Dialog.
