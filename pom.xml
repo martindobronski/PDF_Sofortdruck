@@ -21,6 +21,12 @@
       <artifactId>pdfbox</artifactId>
       <version>3.0.3</version>
     </dependency>
+    <!-- Erzwingt den Fokus des Druckdialogs über die Windows-API. -->
+    <dependency>
+      <groupId>net.java.dev.jna</groupId>
+      <artifactId>jna</artifactId>
+      <version>5.14.0</version>
+    </dependency>
   </dependencies>
 
   <build>

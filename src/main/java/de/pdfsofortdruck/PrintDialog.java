@@ -13,7 +13,6 @@ import javax.swing.SwingWorker;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.EventQueue;
-import java.awt.Robot;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Frame;
@@ -116,15 +115,7 @@ public final class PrintDialog extends JDialog {
         if (visible) {
             // Der Dialog hat keinen Owner; Fokus daher explizit nach dem Anzeigen setzen.
             EventQueue.invokeLater(() -> {
-                // Windows erlaubt einem Hintergrundprozess sonst nicht, den Fokus zu nehmen.
-                // Ein harmloser ALT-Tastendruck löst die Foreground-Sperre aus.
-                try {
-                    Robot robot = new Robot();
-                    robot.keyPress(KeyEvent.VK_ALT);
-                    robot.keyRelease(KeyEvent.VK_ALT);
-                } catch (Exception ignored) {
-                    // Falls kein Robot verfügbar ist, trotzdem versuchen.
-                }
+                WindowsForeground.force(this);
                 toFront();
                 requestFocus();
                 printButton.requestFocus();

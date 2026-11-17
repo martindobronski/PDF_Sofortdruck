@@ -36,6 +36,7 @@ public final class Main {
             } catch (Throwable e) {
                 frame.log("Robot (Tastatureingabe) NICHT verfügbar: " + e);
             }
+            frame.log(WindowsForeground.diagnose());
             frame.setVisible(true);
             frame.setState(java.awt.Frame.ICONIFIED); // Statusfenster sofort minimieren
             watcher.start();
