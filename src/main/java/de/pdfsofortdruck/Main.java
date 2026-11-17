@@ -42,6 +42,8 @@ public final class Main {
             frame.log(WindowsForeground.diagnose());
             frame.setVisible(true);
             frame.setState(java.awt.Frame.ICONIFIED); // Statusfenster sofort minimieren
+            PrintDialog.warmUp(); // ersten modalen Dialog einmalig initialisieren
+            frame.log("Modaler Dialog initialisiert.");
             watcher.start();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null,

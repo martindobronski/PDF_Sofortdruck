@@ -6,9 +6,6 @@ import javax.swing.SwingUtilities;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Queue;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /** Zeigt die Druckdialoge nacheinander an und schließt ggf. den Edge-Tab. */
@@ -23,11 +20,6 @@ public final class PrintDialogManager {
     private final EdgeTabCloser edgeTabCloser;
     private final Consumer<String> logger;
     private final Queue<Pending> queue = new ArrayDeque<>();
-    private final ScheduledExecutorService delayExecutor = Executors.newSingleThreadScheduledExecutor(task -> {
-        Thread thread = new Thread(task, "dialog-delay");
-        thread.setDaemon(true);
-        return thread;
-    });
     private boolean dialogActive;
 
     public PrintDialogManager(WatcherConfig config, EdgeTabCloser edgeTabCloser, Consumer<String> logger) {
@@ -47,13 +39,7 @@ public final class PrintDialogManager {
             }
             dialogActive = true;
         }
-        scheduleShow();
-    }
-
-    /** Erst anzeigen, wenn der Browser seinen Download-Dialog aufgebaut hat. */
-    private void scheduleShow() {
-        delayExecutor.schedule(() -> SwingUtilities.invokeLater(this::showNext),
-                config.dialogDelayMs(), TimeUnit.MILLISECONDS);
+        SwingUtilities.invokeLater(this::showNext);
     }
 
     private void showNext() {
@@ -77,7 +63,7 @@ public final class PrintDialogManager {
                     Thread.currentThread().interrupt();
                 }
                 edgeTabCloser.closeActiveTab(pending.browserWindow());
-                scheduleShow();
+                SwingUtilities.invokeLater(this::showNext);
             }, "edge-tab-close");
             closer.setDaemon(true);
             closer.start();

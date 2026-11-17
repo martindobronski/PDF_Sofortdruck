@@ -10,13 +10,17 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.KeyboardFocusManager;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Frame;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
@@ -29,6 +33,25 @@ import java.util.function.Consumer;
 
 /** Dialog, der beim Auftauchen einer passenden PDF angezeigt wird. */
 public final class PrintDialog extends JDialog {
+
+    /**
+     * Initialisiert beim Programmstart AWTs geteilten Owner-Rahmen für modale Dialoge.
+     * Der Dummy-Dialog liegt außerhalb des Bildschirms und nimmt selbst keinen Fokus.
+     * Danach verhält sich der erste echte Druckdialog wie jeder weitere.
+     */
+    static void warmUp() {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(PrintDialog::warmUp);
+            return;
+        }
+        JDialog dummy = new JDialog((Frame) null, "", true);
+        dummy.setUndecorated(true);
+        dummy.setSize(1, 1);
+        dummy.setLocation(-2000, -2000);
+        dummy.setAutoRequestFocus(false);
+        EventQueue.invokeLater(dummy::dispose);
+        dummy.setVisible(true);
+    }
 
     private static final int FOCUS_CHECK_MS = 200;
     private static final int FOCUS_WATCHDOG_MS = 8000;
@@ -114,7 +137,7 @@ public final class PrintDialog extends JDialog {
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowOpened(WindowEvent event) {
-                logger.accept("Druckdialog geöffnet – Fokus wird gesetzt.");
+                logger.accept("Druckdialog geöffnet – Fokus wird gesetzt. " + awtFocusInfo());
                 EventQueue.invokeLater(() -> {
                     logger.accept(WindowsForeground.force(PrintDialog.this));
                     applyFocus();
@@ -138,6 +161,14 @@ public final class PrintDialog extends JDialog {
         toFront();
         requestFocus();
         printButton.requestFocus();
+    }
+
+    private String awtFocusInfo() {
+        KeyboardFocusManager manager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+        Window focusedWindow = manager.getFocusedWindow();
+        Component focusOwner = manager.getFocusOwner();
+        return "AWT-Fokusfenster=" + (focusedWindow == null ? "null" : focusedWindow.getClass().getSimpleName())
+                + ", Fokusinhaber=" + (focusOwner == null ? "null" : focusOwner.getClass().getSimpleName());
     }
 
     /**
@@ -165,7 +196,7 @@ public final class PrintDialog extends JDialog {
                 return;
             }
             focusConfirmedChecks = 0;
-            logger.accept("Druckdialog ohne Fokus – Fokus wird erneut gesetzt.");
+            logger.accept("Druckdialog ohne Fokus – Fokus wird erneut gesetzt. " + awtFocusInfo());
             logger.accept(WindowsForeground.force(this));
             applyFocus();
         });

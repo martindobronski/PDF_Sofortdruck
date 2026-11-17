@@ -73,7 +73,6 @@ Beispiel:
   "fileNamePattern": "\\d{6}_\\d{18}\\.pdf",
   "pollIntervalMs": 1000,
   "stabilityMs": 800,
-  "dialogDelayMs": 800,
   "printerName": "",
   "processExistingOnStart": false,
   "deleteAfterPrint": false,
@@ -87,7 +86,6 @@ Beispiel:
 | `fileNamePattern` | Regulärer Ausdruck für den Basis-Dateinamen. Standard: 6 Ziffern, `_`, 18 Ziffern, `.pdf` (Groß-/Kleinschreibung egal). Ein von Browsern angehängter Zähler wird automatisch entfernt und muss nicht im Muster stehen. In JSON muss jeder Backslash verdoppelt werden. |
 | `pollIntervalMs` | Prüfabstand in Millisekunden, mindestens 200. |
 | `stabilityMs` | Eine Datei gilt erst nach dieser Zeit ohne Größen-/Zeitänderung als fertig geschrieben. Verhindert Dialoge während des Downloads. |
-| `dialogDelayMs` | Verzögerung in Millisekunden, bevor der Druckdialog erscheint (Standard `800`, `0` = sofort). Gibt dem Browser Zeit, seinen Download-Dialog aufzubauen, damit er dem Druckdialog nicht den Fokus wegnimmt. |
 | `printerName` | Leer = Standarddrucker. Optional der exakte Name eines Druckers (Groß-/Kleinschreibung egal). |
 | `processExistingOnStart` | `false` = schon vorhandene passende Dateien beim Start ignorieren. `true` = auch diese melden. |
 | `deleteAfterPrint` | `true` = die PDF wird nach erfolgreichem Druck gelöscht. `false` = Datei bleibt liegen. Bei Abbruch oder Druckfehler wird nichts gelöscht. |
@@ -115,7 +113,9 @@ Downloadverzeichnis wird dann `Downloads` im Benutzerprofil eingetragen.
   einem modalen Dialog blockiert `setVisible(true)` bis `dispose()`). Falls der
   Browser-Download-Dialog ihn danach übernimmt, holt der Dialog ihn bis zu 8 Sekunden lang
   selbst zurück und beendet die Überwachung, sobald er eine Sekunde stabil im Vordergrund
-  war (`Druckdialog ohne Fokus – ...` im Log).
+  war (`Druckdialog ohne Fokus – ...` im Log). Beim Start wird außerdem einmal ein
+  unsichtbarer modaler Dialog geöffnet und sofort geschlossen (`Modaler Dialog initialisiert.`
+  im Log), damit AWTs geteilte Dialog-Infrastruktur schon steht, wenn die erste PDF kommt.
 - Mit `closeEdgeTabAfterPrint: true` sendet das Programm ca. 300 ms nach dem Druck einfach
   `Strg+W` an das Vordergrundfenster – ohne Prozess- oder URL-Prüfung. Der Browser steht
   beim Auslösen des Drucks im Vordergrund und erhält nach dem Dialog wieder den Fokus.
