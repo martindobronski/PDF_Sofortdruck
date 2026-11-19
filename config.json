@@ -1,6 +1,6 @@
 {
   "downloadDirectory": "C:/MD/Download",
-  "fileNamePattern": "\\d{6}_\\d{18}\\.pdf",
+  "fileNamePattern": "\\d{6}_.*\\.pdf",
   "pollIntervalMs": 1000,
   "stabilityMs": 800,
   "printerName": "",

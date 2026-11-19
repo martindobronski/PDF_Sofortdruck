@@ -72,7 +72,7 @@ Beispiel:
 ```json
 {
   "downloadDirectory": "C:/MD/Download",
-  "fileNamePattern": "\\d{6}_\\d{18}\\.pdf",
+  "fileNamePattern": "\\d{6}_.*\\.pdf",
   "pollIntervalMs": 1000,
   "stabilityMs": 800,
   "printerName": "",
@@ -85,7 +85,7 @@ Beispiel:
 | Einstellung | Bedeutung |
 | --- | --- |
 | `downloadDirectory` | Zu überwachendes Verzeichnis. Auf Windows funktionieren sowohl `C:/MD/Download` als auch `C:\\MD\\Download`. |
-| `fileNamePattern` | Regulärer Ausdruck für den Basis-Dateinamen. Standard: 6 Ziffern, `_`, 18 Ziffern, `.pdf` (Groß-/Kleinschreibung egal). Ein von Browsern angehängter Zähler wird automatisch entfernt und muss nicht im Muster stehen. In JSON muss jeder Backslash verdoppelt werden. |
+| `fileNamePattern` | Regulärer Ausdruck für den Basis-Dateinamen. Standard: 6 Ziffern, `_`, beliebige weitere Zeichen, `.pdf` (Groß-/Kleinschreibung egal). Ein von Browsern angehängter Zähler wird automatisch entfernt und muss nicht im Muster stehen. In JSON muss jeder Backslash verdoppelt werden. |
 | `pollIntervalMs` | Prüfabstand in Millisekunden, mindestens 200. |
 | `stabilityMs` | Eine Datei gilt erst nach dieser Zeit ohne Größen-/Zeitänderung als fertig geschrieben. Verhindert Dialoge während des Downloads. |
 | `printerName` | Leer = Standarddrucker. Optional der exakte Name eines Druckers (Groß-/Kleinschreibung egal). |
@@ -98,14 +98,18 @@ Downloadverzeichnis wird dann `Downloads` im Benutzerprofil eingetragen.
 
 ## Verhalten
 
-- Der Standard-Ausdruck `\\d{6}_\\d{18}\\.pdf` passt auf `210607_148844746850961591.pdf`.
+- Der Standard-Ausdruck `\\d{6}_.*\\.pdf` passt auf jeden Dateinamen, der mit sechs Ziffern
+  und einem Unterstrich beginnt und auf `.pdf` endet – z. B.
+  `210607_148844746850961591.pdf`, `210607_Rechnung.pdf` oder `123456_foo-bar.pdf`.
 - Bei jedem weiteren Download hängt der Browser einen Zähler an. Sowohl
   `210607_148844746850961591(1).pdf` als auch `210607_148844746850961591 (1).pdf`
   (mit Leerzeichen) und höhere Zähler werden ebenfalls erkannt. Der Zähler wird vor dem
   Abgleich mit dem Muster entfernt, daher funktioniert das auch mit bereits vorhandenen Konfigurationen.
 - Die Datei muss vollständig geschrieben sein, bevor der Dialog erscheint.
 - `Enter` oder `Drucken` löst den Druck aus. Ein Doppelklick bzw. `Enter` plus Button
-  erzeugt nur einen Auftrag.
+  erzeugt nur einen Auftrag. Sobald der Dialog im Vordergrund ist, sendet er einmalig eine
+  `Tab`-Taste, damit der Druckbutton den Tastaturfokus besitzt (`Tab-Taste gesendet ...`
+  im Log).
 - `Abbrechen` oder `Esc` überspringt die Datei; in diesem Fall wird sie nicht gelöscht.
 - Mit `deleteAfterPrint: true` wird die Datei nur nach erfolgreichem Druck entfernt.
   Schlägt das Löschen fehl, erscheint eine Warnung; der Druckauftrag bleibt trotzdem erfolgt.

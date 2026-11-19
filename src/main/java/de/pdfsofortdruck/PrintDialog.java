@@ -20,6 +20,7 @@ import java.awt.KeyboardFocusManager;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Frame;
+import java.awt.Robot;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -68,6 +69,7 @@ public final class PrintDialog extends JDialog {
     private Timer focusTimer;
     private long focusWatchdogEnd;
     private int focusConfirmedChecks;
+    private boolean focusTabSent;
 
     public PrintDialog(Path file, WatcherConfig config, Consumer<String> logger) {
         // Kein Owner: der Dialog bleibt sichtbar, obwohl das Statusfenster minimiert ist.
@@ -167,6 +169,23 @@ public final class PrintDialog extends JDialog {
         printButton.requestFocus();
     }
 
+    /**
+     * Der Dialog kann im Vordergrund liegen, ohne dass ein Component den Tastaturfokus
+     * besitzt. Ein echter Tab-Tastendruck setzt den Fokus owner – danach löst Enter
+     * zuverlässig den Druckbutton aus.
+     */
+    private void sendTab() {
+        try {
+            Robot robot = new Robot();
+            robot.keyPress(KeyEvent.VK_TAB);
+            robot.delay(40);
+            robot.keyRelease(KeyEvent.VK_TAB);
+            logger.accept("Tab-Taste gesendet – Fokus auf dem Druckbutton. " + awtFocusInfo());
+        } catch (Throwable e) {
+            logger.accept("Tab-Taste konnte nicht gesendet werden: " + e);
+        }
+    }
+
     private String awtFocusInfo() {
         KeyboardFocusManager manager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
         Window focusedWindow = manager.getFocusedWindow();
@@ -190,6 +209,7 @@ public final class PrintDialog extends JDialog {
         }
         focusWatchdogEnd = System.currentTimeMillis() + FOCUS_WATCHDOG_MS;
         focusConfirmedChecks = 0;
+        focusTabSent = false;
         focusTimer = new Timer(FOCUS_CHECK_MS, event -> {
             try {
                 if (!isDisplayable() || !isVisible() || System.currentTimeMillis() >= focusWatchdogEnd) {
@@ -204,6 +224,10 @@ public final class PrintDialog extends JDialog {
                     foreground = false;
                 }
                 if (foreground) {
+                    if (!focusTabSent) {
+                        focusTabSent = true;
+                        sendTab();
+                    }
                     if (++focusConfirmedChecks >= FOCUS_STABLE_CHECKS) {
                         logger.accept("Druckdialog hat stabil den Fokus – Überwachung beendet.");
                         stopFocusWatchdog();

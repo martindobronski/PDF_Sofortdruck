@@ -42,7 +42,10 @@ Ablauf vom Download bis zum geschlossenen Tab:
 3. **Namenserkennung:** Browser-Zähler wie ` (1)` oder `(2)` werden vor dem Abgleich
    entfernt. Übrig bleibt der Basisname, der auf `fileNamePattern` geprüft wird.
 4. **Dialog:** `PrintDialogManager` zeigt einen modalen Dialog im Vordergrund. Fokus wird
-   über die Windows-API (JNA) aktiv erzwungen und für maximal 8 Sekunden überwacht.
+   über die Windows-API (JNA) aktiv erzwungen und für maximal 8 Sekunden überwacht. Sobald
+   der Vordergrund bestätigt ist, wird einmalig eine `Tab`-Taste gesendet – der Dialog kann
+   nämlich im Vordergrund liegen, ohne dass ein Button den Tastaturfokus hat. Erst dadurch
+   löst `Enter` zuverlässig `Drucken` aus.
 5. **Druck:** `PdfPrinter` rendert die PDF seitenweise über PDFBox und ruft
    `PrinterJob.print()` auf – bewusst **ohne** `printDialog()`. Bei leerem `printerName`
    wird der Windows-Standarddrucker benutzt, sonst der angegebene Drucker.
@@ -92,7 +95,7 @@ falls es kurz sichtbar war.
 ```json
 {
   "downloadDirectory": "C:/MD/Download",
-  "fileNamePattern": "\\d{6}_\\d{18}\\.pdf",
+  "fileNamePattern": "\\d{6}_.*\\.pdf",
   "pollIntervalMs": 1000,
   "stabilityMs": 800,
   "printerName": "",
@@ -105,7 +108,7 @@ falls es kurz sichtbar war.
 | Einstellung | Bedeutung |
 | --- | --- |
 | `downloadDirectory` | Überwachtes Verzeichnis. `C:/MD/Download` und `C:\\MD\\Download` funktionieren beide. |
-| `fileNamePattern` | Regulärer Ausdruck für den Basisnamen. Standard: 6 Ziffern, `_`, 18 Ziffern, `.pdf`. Browser-Zähler werden automatisch entfernt. In JSON jeden Backslash verdoppeln. |
+| `fileNamePattern` | Regulärer Ausdruck für den Basisnamen. Standard: 6 Ziffern, `_`, beliebige weitere Zeichen, `.pdf`. Browser-Zähler werden automatisch entfernt. In JSON jeden Backslash verdoppeln. |
 | `pollIntervalMs` | Prüfabstand in ms, mindestens 200. |
 | `stabilityMs` | Datei muss diese Zeit lang unverändert sein, bevor sie gemeldet wird. Verhindert zu frühe Dialoge während des Downloads. |
 | `printerName` | Leer = Windows-Standarddrucker. Sonst exakter Druckername (Groß-/Kleinschreibung egal). |
@@ -215,6 +218,7 @@ Konsolenfenster (siehe 6.1).
 | `Neue PDF erkannt: ...` | Datei wurde als fertig erkannt. |
 | `Druckdialog geöffnet – Fokus wird gesetzt. AWT-Fokusfenster=...` | Dialog ist erschienen; zeigt, wen AWT als fokussiert ansieht. |
 | `Druckdialog-Fokus: vorher ... nachher ...` | Ergebnis der Fokus-Erzwingung. |
+| `Tab-Taste gesendet – Fokus auf dem Druckbutton.` | Einmaliger Tab nach Fokusbestätigung, damit `Enter` den Druckbutton auslöst. |
 | `Druckdialog ohne Fokus – Fokus wird erneut gesetzt.` | Browser hat den Fokus übernommen; Watchdog greift ein. |
 | `Browserfokus wiederhergestellt: ...` | Vor `Strg+W` wurde das Browserfenster aktiviert. |
 | `Strg+W nach dem Druck gesendet.` | Tab-Schließ-Versuch wurde ausgeführt. |
@@ -225,7 +229,7 @@ Konsolenfenster (siehe 6.1).
 | --- | --- |
 | Tab schließt sich nicht | `closeEdgeTabAfterPrint` in der **geladenen** Config prüfen; `javaw` verwenden. |
 | `NoClassDefFoundError: com/sun/jna/Native` | Alte Jar (3,6 MB) im Einsatz → aktuelle 5,4-MB-Jar übernehmen, Artefakt in IntelliJ neu hinzufügen. |
-| `Enter` löst nicht aus | Log Zeile `Druckdialog geöffnet ...` prüfen. Der `Abbrechen`-Button ist bewusst nicht fokussierbar, damit `Enter` immer `Drucken` auslöst. |
+| `Enter` löst nicht aus | Prüfen, ob `Tab-Taste gesendet ...` im Log steht. Der `Abbrechen`-Button ist bewusst nicht fokussierbar, damit `Enter` immer `Drucken` auslöst. |
 | Fokus nur ab dem zweiten Download | JNA fehlt oder Jar alt; siehe 6.3/6.5. |
 | Kein Druck | Standarddrucker eingestellt? `printerName` exakt? Log auf `Druck fehlgeschlagen` prüfen. |
 | Datei wird nicht erkannt | Namensformat prüfen; `fileNamePattern` in JSON korrekt escaped? |
