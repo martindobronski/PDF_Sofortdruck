@@ -1,5 +1,7 @@
 # PDF Sofortdruck
 
+Einfache Benutzeranleitung: [BENUTZERANLEITUNG.md](BENUTZERANLEITUNG.md) · [PDF-Version](BENUTZERANLEITUNG.pdf)
+
 Ausführliche Betriebs- und Nachschlageanleitung: [ANLEITUNG.md](ANLEITUNG.md)
 
 Kleine Java/Swing-Oberfläche, die ein Downloadverzeichnis überwacht. Sobald eine Datei
@@ -31,7 +33,7 @@ target/pdf-sofortdruck.jar
 
 1. `target/pdf-sofortdruck.jar` und `config.json` in einen gemeinsamen Ordner kopieren.
 2. `config.json` anpassen (siehe unten).
-3. Starten mit `javaw -jar pdf-sofortdruck.jar` (oder per Doppelklick, falls `.jar` mit Java verknüpft ist).
+3. Starten mit der mitgelieferten `Start.bat` (empfohlen) oder mit `javaw -jar pdf-sofortdruck.jar`.
 
 **Wichtig bei einem Start per Batch-Datei:** Bitte `javaw.exe` statt `java.exe` verwenden.
 `java.exe` öffnet ein Konsolenfenster; nach dem Schließen des Druckdialogs kann dieses

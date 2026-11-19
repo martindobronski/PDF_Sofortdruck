@@ -67,6 +67,7 @@ kann dort ein Tab/Fenster geschlossen werden.
 | Datei | Zweck |
 | --- | --- |
 | `target/pdf-sofortdruck.jar` | Lauffähige Jar, **ca. 5,4 MB**. Enthält PDFBox **und** JNA samt `jnidispatch.dll`. |
+| `Start.bat` | Start-datei; eine Verknüpfung davon kann auf den Desktop gelegt werden. |
 | `config.json` | Konfiguration. Wird beim ersten Start automatisch angelegt, falls sie fehlt. |
 | `pdf-sofortdruck.log` | Wird neben der geladenen `config.json` geschrieben – die wichtigste Diagnosequelle. |
 
@@ -83,7 +84,8 @@ gelöscht werden.
 2. `pdf-sofortdruck.jar` und `config.json` hineinkopieren.
 3. `config.json` anpassen – mindestens `downloadDirectory` und ggf.
    `closeEdgeTabAfterPrint` (siehe Abschnitt 5).
-4. Start mit `javaw -jar pdf-sofortdruck.jar` – am besten per Batch (siehe Abschnitt 7).
+4. Start mit der mitgelieferten `Start.bat` – am besten per Verknüpfung auf dem Desktop
+   (siehe Abschnitt 7).
 5. Kurz prüfen, ob `pdf-sofortdruck.log` im selben Ordner erscheint und dort
    `Wächter läuft: ...` steht.
 6. Test-Download in den überwachten Ordner legen und `Enter` drücken.
@@ -226,7 +228,9 @@ kommt, damit sich keine zwei `alwaysOnTop`-Fenster überlagern.
 
 ---
 
-## 7. Empfohlene Batch-Datei
+## 7. Start per Batch-Datei
+
+Die mitgelieferte `Start.bat` enthält bereits:
 
 ```bat
 @echo off
