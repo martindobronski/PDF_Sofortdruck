@@ -11,10 +11,23 @@ import java.nio.file.Paths;
 /** Einstiegspunkt: Konfiguration laden, Wächter starten und Oberfläche anzeigen. */
 public final class Main {
 
+    private static volatile String startupWarning;
+
     private Main() {
     }
 
     public static void main(String[] args) {
+        SingleInstanceLock.Result lock = SingleInstanceLock.acquire();
+        if (lock == SingleInstanceLock.Result.ALREADY_RUNNING) {
+            SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(null,
+                    "PDF Sofortdruck läuft bereits.\nEs kann immer nur eine Instanz gleichzeitig laufen.",
+                    "PDF Sofortdruck", JOptionPane.INFORMATION_MESSAGE));
+            return;
+        }
+        if (lock == SingleInstanceLock.Result.ERROR) {
+            startupWarning = "Mehrfachstart-Schutz nicht verfügbar: " + SingleInstanceLock.lastError();
+        }
+        Runtime.getRuntime().addShutdownHook(new Thread(SingleInstanceLock::release, "single-instance-release"));
         SwingUtilities.invokeLater(() -> start(args));
     }
 
@@ -24,13 +37,33 @@ public final class Main {
             Path configFile = configPath(args);
             WatcherConfig config = WatcherConfig.load(configFile);
 
+            SplashWindow splash = config.showSplash() ? new SplashWindow() : null;
+            if (splash != null) {
+                splash.show(config.splashDurationMs());
+            }
+            Runnable closeSplash = splash == null ? () -> { } : splash::close;
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try {
+                    closeSplash.run();
+                } catch (Throwable ignored) {
+                    // Beim JVM-Ende wird das Fenster ohnehin geschlossen.
+                }
+            }, "splash-close"));
+
             WatcherFrame frame = new WatcherFrame(config, configFile);
-            PrintDialogManager dialogs = new PrintDialogManager(config, new EdgeTabCloser(frame::log), frame::log);
+            PrintDialogManager dialogs =
+                    new PrintDialogManager(config, new EdgeTabCloser(frame::log), frame::log, closeSplash);
             DownloadWatcher watcher = new DownloadWatcher(config, dialogs::enqueue, frame::log);
             frame.setWatcher(watcher);
             frame.log("Arbeitsverzeichnis: " + Paths.get("").toAbsolutePath());
             frame.log("Konfiguration: " + configFile.toAbsolutePath());
             frame.log("closeEdgeTabAfterPrint=" + config.closeEdgeTabAfterPrint());
+            frame.log("Splash: " + (config.showSplash()
+                    ? "an (" + config.splashDurationMs() + " ms)" : "aus"));
+            frame.log("Lockdatei: " + SingleInstanceLock.lockFile());
+            if (startupWarning != null) {
+                frame.log(startupWarning);
+            }
             frame.log("Java " + System.getProperty("java.version")
                     + ", Runtime: " + System.getProperty("java.home"));
             frame.log("Geladene Jar: " + codeSource());

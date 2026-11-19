@@ -78,7 +78,9 @@ Beispiel:
   "printerName": "",
   "processExistingOnStart": false,
   "deleteAfterPrint": false,
-  "closeEdgeTabAfterPrint": true
+  "closeEdgeTabAfterPrint": true,
+  "showSplash": true,
+  "splashDurationMs": 3000
 }
 ```
 
@@ -92,12 +94,23 @@ Beispiel:
 | `processExistingOnStart` | `false` = schon vorhandene passende Dateien beim Start ignorieren. `true` = auch diese melden. |
 | `deleteAfterPrint` | `true` = die PDF wird nach erfolgreichem Druck gelöscht. `false` = Datei bleibt liegen. Bei Abbruch oder Druckfehler wird nichts gelöscht. |
 | `closeEdgeTabAfterPrint` | `true` = nach erfolgreichem Druck wird einfach `Strg+W` an das Vordergrundfenster gesendet. `false` = kein Tastendruck. Bei Abbruch oder Druckfehler wird nichts gesendet. |
+| `showSplash` | `true` = beim Start wird ein kurzer Startbildschirm angezeigt (jeden Start, nicht nur den ersten). `false` = kein Splash. |
+| `splashDurationMs` | Anzeigedauer des Splashs in Millisekunden (mindestens 0). Der Splash schließt sich außerdem sofort, wenn ein Druckdialog erscheint. Bei `showSplash: false` ohne Wirkung. |
 
 Fehlt die `config.json`, wird sie beim ersten Start mit Standardwerten angelegt. Als
-Downloadverzeichnis wird dann `Downloads` im Benutzerprofil eingetragen.
+Downloadverzeichnis wird dann `Downloads` im Benutzerprofil eingetragen; der Splash ist
+standardmäßig eingeschaltet (`showSplash: true`, `splashDurationMs: 3000`).
 
 ## Verhalten
 
+- Es kann immer nur **eine Instanz** gleichzeitig laufen. Ein zweiter Start bricht sofort ab
+  und meldet „PDF Sofortdruck läuft bereits." – auch dann, wenn das Statusfenster minimiert
+  ist. Der Schutz nutzt eine Lockdatei im Temp-Verzeichnis
+  (`%TEMP%\pdf-sofortdruck.lock`), die das Betriebssystem beim Beenden automatisch freigibt.
+- Bei `showSplash: true` erscheint beim Start für `splashDurationMs` Millisekunden ein
+  kleiner Text-Splash mit Versionsangabe. Er nimmt bewusst keinen Tastaturfokus an, damit
+  der Druckdialog und `Strg+W` nicht gestört werden. Erscheint vor Ablauf der Zeit ein
+  Druckdialog, schließt er sich sofort.
 - Der Standard-Ausdruck `\\d{6}_.*\\.pdf` passt auf jeden Dateinamen, der mit sechs Ziffern
   und einem Unterstrich beginnt und auf `.pdf` endet – z. B.
   `210607_148844746850961591.pdf`, `210607_Rechnung.pdf` oder `123456_foo-bar.pdf`.
@@ -145,7 +158,9 @@ genauso wie auf Windows über den Windows-Standarddrucker.
 
 ```text
 src/main/java/de/pdfsofortdruck/
-├── Main.java              Start, Konfigurationspfad, Look-and-Feel
+├── Main.java              Start, Mehrfachstart-Schutz, Konfigurationspfad
+├── SingleInstanceLock.java  Datei-Lock gegen Mehrfachstart
+├── SplashWindow.java      Konfigurierbarer Startbildschirm
 ├── WatcherConfig.java     Laden/Anlegen der config.json
 ├── Json.java             Minimaler JSON-Reader für die flache Konfiguration
 ├── DownloadWatcher.java  Überwachung und Erkennung fertiger Dateien

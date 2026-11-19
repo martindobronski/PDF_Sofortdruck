@@ -34,8 +34,10 @@ sind Fokus-Erzwingung und das Senden von `Strg+W`.
 
 Ablauf vom Download bis zum geschlossenen Tab:
 
-1. **Start:** `Main` lädt die `config.json`, erstellt das dauerhaft minimierte Statusfenster
-   und initialisiert einmalig einen unsichtbaren modalen Dialog (siehe Abschnitt 6).
+1. **Start:** `Main` prüft zuerst per Datei-Lock, ob bereits eine Instanz läuft (siehe 6.7).
+   Ist das nicht der Fall, lädt er die `config.json`, zeigt optional den Splash (siehe 6.8),
+   erstellt das dauerhaft minimierte Statusfenster und initialisiert einmalig einen
+   unsichtbaren modalen Dialog (siehe Abschnitt 6).
 2. **Wächter:** `DownloadWatcher` prüft alle `pollIntervalMs` Millisekunden das
    `downloadDirectory`. Eine Datei zählt erst als fertig, wenn Größe und Änderungszeit
    über `stabilityMs` Millisekunden konstant blieben.
@@ -69,7 +71,9 @@ kann dort ein Tab/Fenster geschlossen werden.
 | `pdf-sofortdruck.log` | Wird neben der geladenen `config.json` geschrieben – die wichtigste Diagnosequelle. |
 
 Die Jar ist ein **Fat Jar** (Maven Shade Plugin). Es müssen keine weiteren Bibliotheken
-nebenher kopiert werden.
+nebenher kopiert werden. Die Lockdatei gegen Mehrfachstart (`pdf-sofortdruck.lock`) liegt
+nicht im Programmordner, sondern im Windows-Temp-Verzeichnis (`%TEMP%`). Sie muss nicht
+gelöscht werden.
 
 ---
 
@@ -101,7 +105,9 @@ falls es kurz sichtbar war.
   "printerName": "",
   "processExistingOnStart": false,
   "deleteAfterPrint": false,
-  "closeEdgeTabAfterPrint": true
+  "closeEdgeTabAfterPrint": true,
+  "showSplash": true,
+  "splashDurationMs": 3000
 }
 ```
 
@@ -115,9 +121,12 @@ falls es kurz sichtbar war.
 | `processExistingOnStart` | `false` = bereits vorhandene Dateien werden ignoriert. `true` = auch diese werden gemeldet. |
 | `deleteAfterPrint` | `true` = PDF wird nach erfolgreichem Druck gelöscht. Bei Abbruch/Fehler bleibt sie liegen. |
 | `closeEdgeTabAfterPrint` | `true` = nach erfolgreichem Druck `Strg+W` senden. `false` = kein Tastendruck. **Diese Option war bereits einmal die Ursache für „Tab schließt nicht" – zuerst prüfen!** |
+| `showSplash` | `true` = Startbildschirm bei **jedem** Programmstart anzeigen. `false` = gar kein Splash. Standard: `true`. |
+| `splashDurationMs` | Dauer des Splashs in ms, mindestens 0. Standard: `3000`. Der Splash verschwindet früher, wenn ein Druckdialog erscheint. Bei `showSplash: false` wirkungslos. |
 
 Fehlt die Datei, wird sie mit Standardwerten neu angelegt (Downloadverzeichnis = `Downloads`
-im Benutzerprofil, `closeEdgeTabAfterPrint: false`).
+im Benutzerprofil, `closeEdgeTabAfterPrint: false`, `showSplash: true`,
+`splashDurationMs: 3000`).
 
 ---
 
@@ -187,6 +196,34 @@ Diese Maßnahmen greifen nur, wenn JNA vorhanden ist.
 das bei Erkennung der PDF im Vordergrund war, wieder aktiviert. Bei Batch-Start mit
 `java.exe` ging der Tastendruck an die Konsole – siehe 6.1.
 
+### 6.7 Mehrfachstart-Schutz
+
+Es kann immer nur eine Instanz laufen. `SingleInstanceLock` hält einen exklusiven
+`FileLock` auf `%TEMP%\pdf-sofortdruck.lock` (bzw. `java.io.tmpdir/pdf-sofortdruck.lock`).
+Ein zweiter Start erkennt den gehaltenen Lock, zeigt „PDF Sofortdruck läuft bereits." und
+beendet sich, **ohne** Wächter oder Splash zu starten.
+
+Der Lock wird beim Beenden aktiv freigegeben und zusätzlich vom Betriebssystem – auch nach
+einem Absturz. Deshalb ist nichts zu löschen. Ein verwaistes „Läuft bereits" trotz fehlendem
+Fenster bedeutet meist, dass die Anwendung minimiert in der Taskleiste läuft.
+
+Falls das Temp-Verzeichnis nicht beschreibbar ist, startet die Anwendung trotzdem; der
+Fehler steht dann als `Mehrfachstart-Schutz nicht verfügbar: ...` im Log. Der Schutz ist in
+diesem Fall allerdings wirkungslos.
+
+### 6.8 Splashscreen
+
+Der Splash ist eine eigene `JWindow`-Klasse und **kein** `java.awt.SplashScreen` – nur so
+lässt er sich per `config.json` ein- und ausschalten und in der Dauer steuern. Er ist
+randlos, zentriert und `alwaysOnTop`, aber bewusst **nicht fokussierbar**
+(`setFocusableWindowState(false)`, `setAutoRequestFocus(false)`). Sonst könnte er – genau
+wie ein Konsolenfenster – den Fokus für den Druckdialog oder `Strg+W` stören.
+
+Er zeigt den Titel „PDF Sofortdruck", den Hinweis auf den startenden Wächter und die
+Version `v0.02 vom 17.11.2026`. Ein `javax.swing.Timer` schließt ihn nach
+`splashDurationMs`; `PrintDialogManager` schließt ihn zusätzlich sofort, wenn die erste PDF
+kommt, damit sich keine zwei `alwaysOnTop`-Fenster überlagern.
+
 ---
 
 ## 7. Empfohlene Batch-Datei
@@ -211,6 +248,9 @@ Konsolenfenster (siehe 6.1).
 | --- | --- |
 | `Arbeitsverzeichnis: ...` / `Konfiguration: ...` | Welcher Pfad wirklich benutzt wird. |
 | `Geladene Jar: ...` / `Classpath: ...` | Welche Jar und welcher Classpath aktiv sind. |
+| `Lockdatei: ...` | Pfad der Lockdatei für den Mehrfachstart-Schutz. |
+| `Splash: an (3000 ms)` / `Splash: aus` | Ob der Startbildschirm aktiv ist und wie lange. |
+| `Mehrfachstart-Schutz nicht verfügbar: ...` | Temp-Verzeichnis nicht beschreibbar – Schutz wirkungslos. |
 | `JNA-Klasse im Classpath vorhanden.` / `FEHLT ...` | Ob JNA gefunden wurde. |
 | `JNA/Windows-API verfügbar. Vordergrund beim Start: ...` | Windows-API erreichbar, inkl. Titel des Vordergrundfensters. |
 | `Robot (Tastatureingabe) verfügbar.` | `java.awt.Robot` nutzbar. |
@@ -233,6 +273,9 @@ Konsolenfenster (siehe 6.1).
 | Fokus nur ab dem zweiten Download | JNA fehlt oder Jar alt; siehe 6.3/6.5. |
 | Kein Druck | Standarddrucker eingestellt? `printerName` exakt? Log auf `Druck fehlgeschlagen` prüfen. |
 | Datei wird nicht erkannt | Namensformat prüfen; `fileNamePattern` in JSON korrekt escaped? |
+| Meldung „läuft bereits", obwohl kein Fenster sichtbar | Statusfenster ist dauerhaft minimiert → in der Taskleiste prüfen. Falls wirklich nichts läuft, `%TEMP%\pdf-sofortdruck.lock` prüfen (siehe 6.7). |
+| Splash erscheint nicht | `showSplash` in der **geladenen** Config prüfen; bei sehr kurzem `splashDurationMs` ist er kaum sichtbar. |
+| Splash bleibt zu lange stehen | Er schließt sich sofort beim ersten Druckdialog; ansonsten `splashDurationMs` prüfen. |
 
 ---
 
@@ -252,7 +295,9 @@ wird auf anderen Systemen übersprungen.
 
 ```text
 src/main/java/de/pdfsofortdruck/
-├── Main.java                 Start, Konfigurationspfad, Diagnose-Logs
+├── Main.java                 Start, Mehrfachstart-Schutz, Konfigurationspfad, Diagnose
+├── SingleInstanceLock.java   Datei-Lock gegen Mehrfachstart
+├── SplashWindow.java         Konfigurierbarer Startbildschirm
 ├── WatcherConfig.java        Laden/Anlegen der config.json
 ├── Json.java                 Minimaler JSON-Reader für die flache Config
 ├── DownloadWatcher.java      Verzeichnisüberwachung, Zählererkennung

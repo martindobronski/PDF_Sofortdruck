@@ -17,7 +17,9 @@ public record WatcherConfig(
         String printerName,
         boolean processExistingOnStart,
         boolean deleteAfterPrint,
-        boolean closeEdgeTabAfterPrint) {
+        boolean closeEdgeTabAfterPrint,
+        boolean showSplash,
+        long splashDurationMs) {
 
     private static final String DEFAULT_PATTERN = "\\d{6}_.*\\.pdf";
 
@@ -34,7 +36,9 @@ public record WatcherConfig(
                       "printerName": "",
                       "processExistingOnStart": false,
                       "deleteAfterPrint": false,
-                      "closeEdgeTabAfterPrint": false
+                      "closeEdgeTabAfterPrint": false,
+                      "showSplash": true,
+                      "splashDurationMs": 3000
                     }
                     """.formatted(escapeJson(defaultDownload));
             Path parent = configFile.toAbsolutePath().getParent();
@@ -55,6 +59,8 @@ public record WatcherConfig(
         boolean existing = bool(values, "processExistingOnStart", false);
         boolean deleteAfterPrint = bool(values, "deleteAfterPrint", false);
         boolean closeEdgeTabAfterPrint = bool(values, "closeEdgeTabAfterPrint", false);
+        boolean showSplash = bool(values, "showSplash", true);
+        long splashDurationMs = number(values, "splashDurationMs", 3000);
 
         if (directory.isBlank()) {
             throw new IOException("config.json: downloadDirectory darf nicht leer sein");
@@ -65,6 +71,9 @@ public record WatcherConfig(
         if (stability < 200) {
             throw new IOException("config.json: stabilityMs muss mindestens 200 sein");
         }
+        if (splashDurationMs < 0) {
+            throw new IOException("config.json: splashDurationMs darf nicht negativ sein");
+        }
 
         Pattern compiled;
         try {
@@ -74,7 +83,7 @@ public record WatcherConfig(
         }
 
         return new WatcherConfig(Paths.get(directory), compiled, poll, stability, printer.trim(), existing,
-                deleteAfterPrint, closeEdgeTabAfterPrint);
+                deleteAfterPrint, closeEdgeTabAfterPrint, showSplash, splashDurationMs);
     }
 
     private static String string(Map<String, Object> values, String key, String fallback) throws IOException {

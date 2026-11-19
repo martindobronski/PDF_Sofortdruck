@@ -6,5 +6,7 @@
   "printerName": "",
   "processExistingOnStart": false,
   "deleteAfterPrint": false,
-  "closeEdgeTabAfterPrint": true
+  "closeEdgeTabAfterPrint": true,
+  "showSplash": true,
+  "splashDurationMs": 3000
 }

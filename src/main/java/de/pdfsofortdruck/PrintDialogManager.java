@@ -17,13 +17,16 @@ public final class PrintDialogManager {
     private final WatcherConfig config;
     private final EdgeTabCloser edgeTabCloser;
     private final Consumer<String> logger;
+    private final Runnable closeSplash;
     private final Queue<Pending> queue = new ArrayDeque<>();
     private boolean dialogActive;
 
-    public PrintDialogManager(WatcherConfig config, EdgeTabCloser edgeTabCloser, Consumer<String> logger) {
+    public PrintDialogManager(WatcherConfig config, EdgeTabCloser edgeTabCloser, Consumer<String> logger,
+                              Runnable closeSplash) {
         this.config = config;
         this.edgeTabCloser = edgeTabCloser;
         this.logger = logger;
+        this.closeSplash = closeSplash;
     }
 
     /** Wird aus dem Wächter-Thread aufgerufen. */
@@ -54,6 +57,9 @@ public final class PrintDialogManager {
                 return;
             }
         }
+
+        // Zwei always-on-top-Fenster dürfen sich nicht überlagern: Splash zuerst schließen.
+        closeSplash.run();
 
         PrintDialog dialog = new PrintDialog(pending.file(), config, logger);
         dialog.setVisible(true); // Modaler Dialog; kehrt nach dispose() zurück.
