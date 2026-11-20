@@ -82,7 +82,9 @@ Beispiel:
   "deleteAfterPrint": false,
   "closeEdgeTabAfterPrint": true,
   "showSplash": true,
-  "splashDurationMs": 3000
+  "splashDurationMs": 3000,
+  "setMediaAttributesFromPdf": false,
+  "printDpi": 0
 }
 ```
 
@@ -98,10 +100,14 @@ Beispiel:
 | `closeEdgeTabAfterPrint` | `true` = nach erfolgreichem Druck wird einfach `Strg+W` an das Vordergrundfenster gesendet. `false` = kein Tastendruck. Bei Abbruch oder Druckfehler wird nichts gesendet. |
 | `showSplash` | `true` = beim Start wird ein kurzer Startbildschirm angezeigt (jeden Start, nicht nur den ersten). `false` = kein Splash. |
 | `splashDurationMs` | Anzeigedauer des Splashs in Millisekunden (mindestens 0). Der Splash schließt sich außerdem sofort, wenn ein Druckdialog erscheint. Bei `showSplash: false` ohne Wirkung. |
+| `setMediaAttributesFromPdf` | **Testoption:** `true` = Papierformat und Ausrichtung werden aus der PDF erkannt und beim Druck explizit angefordert. Kann druckerabhängige Versätze/Ränder reduzieren. Standard `false` (bisheriges Verhalten). |
+| `printDpi` | **Testoption:** `0` = Standard-Rendering (bisheriges Verhalten). Wert > 0 (z. B. `300`) = feste Render-DPI für konsistenteres Rendering auf verschiedenen Druckern. |
 
 Fehlt die `config.json`, wird sie beim ersten Start mit Standardwerten angelegt. Als
 Downloadverzeichnis wird dann `Downloads` im Benutzerprofil eingetragen; der Splash ist
-standardmäßig eingeschaltet (`showSplash: true`, `splashDurationMs: 3000`).
+standardmäßig eingeschaltet (`showSplash: true`, `splashDurationMs: 3000`). Die Testoptionen
+`setMediaAttributesFromPdf` (`false`) und `printDpi` (`0`) entsprechen standardmäßig dem
+bisherigen Druckverhalten und können bei Bedarf aktiviert bzw. wieder zurückgesetzt werden.
 
 ## Verhalten
 

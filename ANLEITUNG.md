@@ -109,7 +109,9 @@ falls es kurz sichtbar war.
   "deleteAfterPrint": false,
   "closeEdgeTabAfterPrint": true,
   "showSplash": true,
-  "splashDurationMs": 3000
+  "splashDurationMs": 3000,
+  "setMediaAttributesFromPdf": false,
+  "printDpi": 0
 }
 ```
 
@@ -125,10 +127,17 @@ falls es kurz sichtbar war.
 | `closeEdgeTabAfterPrint` | `true` = nach erfolgreichem Druck `Strg+W` senden. `false` = kein Tastendruck. **Diese Option war bereits einmal die Ursache für „Tab schließt nicht" – zuerst prüfen!** |
 | `showSplash` | `true` = Startbildschirm bei **jedem** Programmstart anzeigen. `false` = gar kein Splash. Standard: `true`. |
 | `splashDurationMs` | Dauer des Splashs in ms, mindestens 0. Standard: `3000`. Der Splash verschwindet früher, wenn ein Druckdialog erscheint. Bei `showSplash: false` wirkungslos. |
+| `setMediaAttributesFromPdf` | **Testoption (Schritt 1):** `true` = Papierformat und Ausrichtung werden aus der PDF (erste Seite) ermittelt und als Druckattribute angefordert. Ziel: treiberabhängige Format-Defaults und damit leichte Versätze/Randunterschiede reduzieren. Standard: `false` = bisheriges Verhalten. |
+| `printDpi` | **Testoption (Schritt 2):** `0` = bisheriges Standard-Rendering. Wert > 0 (z. B. `300`) = feste Render-DPI für das PDF-Rendering. Ziel: konsistenteres Ergebnis auf Druckern mit unterschiedlicher Auflösung. |
 
 Fehlt die Datei, wird sie mit Standardwerten neu angelegt (Downloadverzeichnis = `Downloads`
 im Benutzerprofil, `closeEdgeTabAfterPrint: false`, `showSplash: true`,
-`splashDurationMs: 3000`).
+`splashDurationMs: 3000`, `setMediaAttributesFromPdf: false`, `printDpi: 0`).
+
+**Rollback zum bisherigen Druckverhalten:** `setMediaAttributesFromPdf` auf `false` und
+`printDpi` auf `0` setzen (oder die beiden Zeilen weglassen) – dann verhält sich der Druck
+wieder wie in der aktuellen Version. Die gewählten Optionen werden beim Druck ins Log
+geschrieben (`Druck: PDFPageable ...`, `Druck: Medienattribute ...`).
 
 ---
 
@@ -255,6 +264,7 @@ Konsolenfenster (siehe 6.1).
 | `Lockdatei: ...` | Pfad der Lockdatei für den Mehrfachstart-Schutz. |
 | `Splash: an (3000 ms)` / `Splash: aus` | Ob der Startbildschirm aktiv ist und wie lange. |
 | `Mehrfachstart-Schutz nicht verfügbar: ...` | Temp-Verzeichnis nicht beschreibbar – Schutz wirkungslos. |
+| `Druck: PDFPageable ...` / `Druck: Medienattribute ...` | Aktive Druckoptionen (Standard-DPI/Medien aus PDF) und erkannte Seitengröße – wichtig für Drucktests. |
 | `JNA-Klasse im Classpath vorhanden.` / `FEHLT ...` | Ob JNA gefunden wurde. |
 | `JNA/Windows-API verfügbar. Vordergrund beim Start: ...` | Windows-API erreichbar, inkl. Titel des Vordergrundfensters. |
 | `Robot (Tastatureingabe) verfügbar.` | `java.awt.Robot` nutzbar. |

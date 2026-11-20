@@ -8,5 +8,7 @@
   "deleteAfterPrint": false,
   "closeEdgeTabAfterPrint": true,
   "showSplash": true,
-  "splashDurationMs": 3000
+  "splashDurationMs": 3000,
+  "setMediaAttributesFromPdf": false,
+  "printDpi": 0
 }

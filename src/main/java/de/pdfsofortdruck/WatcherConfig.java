@@ -19,7 +19,9 @@ public record WatcherConfig(
         boolean deleteAfterPrint,
         boolean closeEdgeTabAfterPrint,
         boolean showSplash,
-        long splashDurationMs) {
+        long splashDurationMs,
+        boolean setMediaAttributesFromPdf,
+        long printDpi) {
 
     private static final String DEFAULT_PATTERN = "\\d{6}_.*\\.pdf";
 
@@ -38,7 +40,9 @@ public record WatcherConfig(
                       "deleteAfterPrint": false,
                       "closeEdgeTabAfterPrint": false,
                       "showSplash": true,
-                      "splashDurationMs": 3000
+                      "splashDurationMs": 3000,
+                      "setMediaAttributesFromPdf": false,
+                      "printDpi": 0
                     }
                     """.formatted(escapeJson(defaultDownload));
             Path parent = configFile.toAbsolutePath().getParent();
@@ -61,6 +65,8 @@ public record WatcherConfig(
         boolean closeEdgeTabAfterPrint = bool(values, "closeEdgeTabAfterPrint", false);
         boolean showSplash = bool(values, "showSplash", true);
         long splashDurationMs = number(values, "splashDurationMs", 3000);
+        boolean setMediaAttributesFromPdf = bool(values, "setMediaAttributesFromPdf", false);
+        long printDpi = number(values, "printDpi", 0);
 
         if (directory.isBlank()) {
             throw new IOException("config.json: downloadDirectory darf nicht leer sein");
@@ -74,6 +80,9 @@ public record WatcherConfig(
         if (splashDurationMs < 0) {
             throw new IOException("config.json: splashDurationMs darf nicht negativ sein");
         }
+        if (printDpi < 0) {
+            throw new IOException("config.json: printDpi darf nicht negativ sein");
+        }
 
         Pattern compiled;
         try {
@@ -83,7 +92,8 @@ public record WatcherConfig(
         }
 
         return new WatcherConfig(Paths.get(directory), compiled, poll, stability, printer.trim(), existing,
-                deleteAfterPrint, closeEdgeTabAfterPrint, showSplash, splashDurationMs);
+                deleteAfterPrint, closeEdgeTabAfterPrint, showSplash, splashDurationMs,
+                setMediaAttributesFromPdf, printDpi);
     }
 
     private static String string(Map<String, Object> values, String key, String fallback) throws IOException {

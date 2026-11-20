@@ -290,7 +290,7 @@ public final class PrintDialog extends JDialog {
         new SwingWorker<Void, Void>() {
             @Override
             protected Void doInBackground() throws Exception {
-                PdfPrinter.print(file, config.printerName());
+                PdfPrinter.print(file, config, logger);
                 return null;
             }
 
