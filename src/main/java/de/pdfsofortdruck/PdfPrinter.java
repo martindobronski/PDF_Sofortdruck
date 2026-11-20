@@ -2,8 +2,7 @@ package de.pdfsofortdruck;
 
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.printing.PDFPrintable;
-import org.apache.pdfbox.printing.Scaling;
+import org.apache.pdfbox.printing.PDFPageable;
 
 import javax.print.PrintService;
 import javax.print.PrintServiceLookup;
@@ -31,7 +30,9 @@ public final class PdfPrinter {
         try (PDDocument document = Loader.loadPDF(pdf.toFile())) {
             PrinterJob job = PrinterJob.getPrinterJob();
             job.setPrintService(printer); // Kein printDialog() -> direkt auf den Standarddrucker.
-            job.setPrintable(new PDFPrintable(document, Scaling.SHRINK_TO_FIT));
+            // PDFPageable übernimmt Papierformat und Ausrichtung aus der PDF-Seite
+            // und vermeidet Größen-/Positionsverschiebungen durch ein falsches Standard-PageFormat.
+            job.setPageable(new PDFPageable(document));
             PrintRequestAttributeSet attributes = new HashPrintRequestAttributeSet();
             attributes.add(new Copies(1));
             job.print(attributes);
