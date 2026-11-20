@@ -84,7 +84,9 @@ Beispiel:
   "showSplash": true,
   "splashDurationMs": 3000,
   "setMediaAttributesFromPdf": false,
-  "printDpi": 0
+  "printDpi": 0,
+  "printOffsetXMm": 0,
+  "printOffsetYMm": 0
 }
 ```
 
@@ -102,12 +104,15 @@ Beispiel:
 | `splashDurationMs` | Anzeigedauer des Splashs in Millisekunden (mindestens 0). Der Splash schließt sich außerdem sofort, wenn ein Druckdialog erscheint. Bei `showSplash: false` ohne Wirkung. |
 | `setMediaAttributesFromPdf` | **Testoption:** `true` = Papierformat und Ausrichtung werden aus der PDF erkannt und beim Druck explizit angefordert. Kann druckerabhängige Versätze/Ränder reduzieren. Standard `false` (bisheriges Verhalten). |
 | `printDpi` | **Testoption:** `0` = Standard-Rendering (bisheriges Verhalten). Wert > 0 (z. B. `300`) = feste Render-DPI für konsistenteres Rendering auf verschiedenen Druckern. |
+| `printOffsetXMm` | Horizontaler Druckversatz in Millimetern. `0` = bisheriges Verhalten. Positiv = nach rechts, negativ = nach links. |
+| `printOffsetYMm` | Vertikaler Druckversatz in Millimetern. `0` = bisheriges Verhalten. Positiv = nach unten, negativ = nach oben (z. B. `-2` vergrößert den unteren Rand). Zu große Werte können zum Abschneiden führen. |
 
 Fehlt die `config.json`, wird sie beim ersten Start mit Standardwerten angelegt. Als
 Downloadverzeichnis wird dann `Downloads` im Benutzerprofil eingetragen; der Splash ist
-standardmäßig eingeschaltet (`showSplash: true`, `splashDurationMs: 3000`). Die Testoptionen
-`setMediaAttributesFromPdf` (`false`) und `printDpi` (`0`) entsprechen standardmäßig dem
-bisherigen Druckverhalten und können bei Bedarf aktiviert bzw. wieder zurückgesetzt werden.
+standardmäßig eingeschaltet (`showSplash: true`, `splashDurationMs: 3000`). Die Druckoptionen
+`setMediaAttributesFromPdf` (`false`), `printDpi` (`0`) und `printOffsetXMm`/`printOffsetYMm`
+(`0`) entsprechen standardmäßig dem bisherigen Verhalten und können bei Bedarf angepasst bzw.
+zurückgesetzt werden.
 
 ## Verhalten
 

@@ -111,7 +111,9 @@ falls es kurz sichtbar war.
   "showSplash": true,
   "splashDurationMs": 3000,
   "setMediaAttributesFromPdf": false,
-  "printDpi": 0
+  "printDpi": 0,
+  "printOffsetXMm": 0,
+  "printOffsetYMm": 0
 }
 ```
 
@@ -129,15 +131,19 @@ falls es kurz sichtbar war.
 | `splashDurationMs` | Dauer des Splashs in ms, mindestens 0. Standard: `3000`. Der Splash verschwindet früher, wenn ein Druckdialog erscheint. Bei `showSplash: false` wirkungslos. |
 | `setMediaAttributesFromPdf` | **Testoption (Schritt 1):** `true` = Papierformat und Ausrichtung werden aus der PDF (erste Seite) ermittelt und als Druckattribute angefordert. Ziel: treiberabhängige Format-Defaults und damit leichte Versätze/Randunterschiede reduzieren. Standard: `false` = bisheriges Verhalten. |
 | `printDpi` | **Testoption (Schritt 2):** `0` = bisheriges Standard-Rendering. Wert > 0 (z. B. `300`) = feste Render-DPI für das PDF-Rendering. Ziel: konsistenteres Ergebnis auf Druckern mit unterschiedlicher Auflösung. |
+| `printOffsetXMm` | Horizontaler Druckversatz in mm. Standard: `0` = bisheriges Verhalten. Positiv = nach rechts, negativ = nach links. |
+| `printOffsetYMm` | Vertikaler Druckversatz in mm. Standard: `0` = bisheriges Verhalten. Positiv = nach unten, negativ = nach oben. Zum Ausgleich eines zu schmalen unteren Rands z. B. `-1` oder `-2` probieren. Zu große Werte können Inhalte am Rand abschneiden. |
 
 Fehlt die Datei, wird sie mit Standardwerten neu angelegt (Downloadverzeichnis = `Downloads`
 im Benutzerprofil, `closeEdgeTabAfterPrint: false`, `showSplash: true`,
-`splashDurationMs: 3000`, `setMediaAttributesFromPdf: false`, `printDpi: 0`).
+`splashDurationMs: 3000`, `setMediaAttributesFromPdf: false`, `printDpi: 0`,
+`printOffsetXMm: 0`, `printOffsetYMm: 0`.
 
-**Rollback zum bisherigen Druckverhalten:** `setMediaAttributesFromPdf` auf `false` und
-`printDpi` auf `0` setzen (oder die beiden Zeilen weglassen) – dann verhält sich der Druck
-wieder wie in der aktuellen Version. Die gewählten Optionen werden beim Druck ins Log
-geschrieben (`Druck: PDFPageable ...`, `Druck: Medienattribute ...`).
+**Rollback zum bisherigen Druckverhalten:** `setMediaAttributesFromPdf` auf `false`,
+`printDpi` auf `0` und beide Offsets auf `0` setzen (oder die Zeilen weglassen) – dann
+verhält sich der Druck wieder wie in der aktuellen Version. Die gewählten Optionen werden
+beim Druck ins Log geschrieben (`Druck: PDFPageable ...`, `Druck: Medienattribute ...`,
+`Druck: Versatz ...` / `kein Versatz`).
 
 ---
 

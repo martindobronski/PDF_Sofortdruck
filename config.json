@@ -10,5 +10,7 @@
   "showSplash": true,
   "splashDurationMs": 3000,
   "setMediaAttributesFromPdf": false,
-  "printDpi": 0
+  "printDpi": 0,
+  "printOffsetXMm": 0,
+  "printOffsetYMm": 0
 }

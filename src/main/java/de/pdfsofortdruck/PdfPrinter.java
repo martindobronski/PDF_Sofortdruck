@@ -16,6 +16,10 @@ import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.OrientationRequested;
+import java.awt.Graphics2D;
+import java.awt.print.PageFormat;
+import java.awt.print.Pageable;
+import java.awt.print.Printable;
 import java.awt.print.PrinterJob;
 import java.nio.file.Path;
 import java.util.function.Consumer;
@@ -42,13 +46,28 @@ public final class PdfPrinter {
 
             // Schritt 2 (optional): feste Render-DPI für konsistenteres Rendering.
             // printDpi==0 entspricht dem bisherigen Standardverhalten.
+            Pageable pageable;
             if (config.printDpi() > 0) {
-                job.setPageable(new PDFPageable(document, Orientation.AUTO, false, (float) config.printDpi()));
+                pageable = new PDFPageable(document, Orientation.AUTO, false, (float) config.printDpi());
                 logger.accept("Druck: PDFPageable mit fester DPI=" + config.printDpi());
             } else {
-                job.setPageable(new PDFPageable(document));
+                pageable = new PDFPageable(document);
                 logger.accept("Druck: PDFPageable mit Standard-DPI (aktuelles Verhalten)");
             }
+
+            double offsetXMm = config.printOffsetXMm();
+            double offsetYMm = config.printOffsetYMm();
+            if (offsetXMm != 0.0 || offsetYMm != 0.0) {
+                double offsetXPt = offsetXMm * 72.0 / 25.4;
+                double offsetYPt = offsetYMm * 72.0 / 25.4;
+                pageable = withOffset(pageable, offsetXPt, offsetYPt);
+                logger.accept(String.format(
+                        "Druck: Versatz angewendet X=%.2f mm, Y=%.2f mm (positiv = rechts/unten, 0/0 = aktuelles Verhalten)",
+                        offsetXMm, offsetYMm));
+            } else {
+                logger.accept("Druck: kein Versatz (aktuelles Verhalten)");
+            }
+            job.setPageable(pageable);
 
             PrintRequestAttributeSet attributes = new HashPrintRequestAttributeSet();
             attributes.add(new Copies(1));
@@ -110,6 +129,34 @@ public final class PdfPrinter {
         } catch (Exception e) {
             logger.accept("Druck: Medienattribute konnten nicht ermittelt werden: " + e);
         }
+    }
+
+    private static Pageable withOffset(Pageable delegate, double offsetXPt, double offsetYPt) {
+        return new Pageable() {
+            @Override
+            public int getNumberOfPages() {
+                return delegate.getNumberOfPages();
+            }
+
+            @Override
+            public PageFormat getPageFormat(int pageIndex) throws IndexOutOfBoundsException {
+                return delegate.getPageFormat(pageIndex);
+            }
+
+            @Override
+            public Printable getPrintable(int pageIndex) throws IndexOutOfBoundsException {
+                Printable original = delegate.getPrintable(pageIndex);
+                return (graphics, pageFormat, idx) -> {
+                    Graphics2D g2 = (Graphics2D) graphics.create();
+                    try {
+                        g2.translate(offsetXPt, offsetYPt);
+                        return original.print(g2, pageFormat, idx);
+                    } finally {
+                        g2.dispose();
+                    }
+                };
+            }
+        };
     }
 
     private static PrintService findPrinter(String printerName) {

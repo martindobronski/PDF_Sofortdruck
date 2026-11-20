@@ -21,7 +21,9 @@ public record WatcherConfig(
         boolean showSplash,
         long splashDurationMs,
         boolean setMediaAttributesFromPdf,
-        long printDpi) {
+        long printDpi,
+        double printOffsetXMm,
+        double printOffsetYMm) {
 
     private static final String DEFAULT_PATTERN = "\\d{6}_.*\\.pdf";
 
@@ -42,7 +44,9 @@ public record WatcherConfig(
                       "showSplash": true,
                       "splashDurationMs": 3000,
                       "setMediaAttributesFromPdf": false,
-                      "printDpi": 0
+                      "printDpi": 0,
+                      "printOffsetXMm": 0,
+                      "printOffsetYMm": 0
                     }
                     """.formatted(escapeJson(defaultDownload));
             Path parent = configFile.toAbsolutePath().getParent();
@@ -67,6 +71,8 @@ public record WatcherConfig(
         long splashDurationMs = number(values, "splashDurationMs", 3000);
         boolean setMediaAttributesFromPdf = bool(values, "setMediaAttributesFromPdf", false);
         long printDpi = number(values, "printDpi", 0);
+        double printOffsetXMm = doubleNumber(values, "printOffsetXMm", 0);
+        double printOffsetYMm = doubleNumber(values, "printOffsetYMm", 0);
 
         if (directory.isBlank()) {
             throw new IOException("config.json: downloadDirectory darf nicht leer sein");
@@ -93,7 +99,7 @@ public record WatcherConfig(
 
         return new WatcherConfig(Paths.get(directory), compiled, poll, stability, printer.trim(), existing,
                 deleteAfterPrint, closeEdgeTabAfterPrint, showSplash, splashDurationMs,
-                setMediaAttributesFromPdf, printDpi);
+                setMediaAttributesFromPdf, printDpi, printOffsetXMm, printOffsetYMm);
     }
 
     private static String string(Map<String, Object> values, String key, String fallback) throws IOException {
@@ -127,6 +133,17 @@ public record WatcherConfig(
             throw new IOException("config.json: " + key + " muss true oder false sein");
         }
         return flag;
+    }
+
+    private static double doubleNumber(Map<String, Object> values, String key, double fallback) throws IOException {
+        Object value = values.get(key);
+        if (value == null) {
+            return fallback;
+        }
+        if (!(value instanceof Number number)) {
+            throw new IOException("config.json: " + key + " muss eine Zahl sein");
+        }
+        return number.doubleValue();
     }
 
     private static String escapeJson(String value) {
